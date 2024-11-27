@@ -3,7 +3,7 @@ import { fal } from "@fal-ai/client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "FAL.AI Studio",
+  title: "Simple FAL.AI API Key Studio",
   description: "Generate amazing images with AI using FAL.AI's powerful image generation API",
   keywords: ["AI", "image generation", "FAL.AI", "artificial intelligence", "stable diffusion"],
   authors: [{ name: "Your Name" }],

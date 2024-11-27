@@ -52,7 +52,7 @@ export async function generateImage(
   options?: {
     seed?: number;
     enable_safety_checker?: boolean;
-    safety_tolerance?: string;
+    safety_tolerance?: "1" | "2" | "3" | "4" | "5" | "6";
     output_format?: "jpeg" | "png";
     raw?: boolean;
   }
