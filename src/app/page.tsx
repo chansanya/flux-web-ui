@@ -28,7 +28,22 @@ export default function Home() {
       </main>
 
       <footer className="text-center text-sm text-muted-foreground">
-        <p>Powered by FAL.AI and Next.js</p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <p>Powered by FAL.AI and Next.js</p>
+          <span>•</span>
+          <p>A simple AI frontend for Flux API</p>
+          <span>•</span>
+          <p>Made with ❤️ in Vancouver, BC</p>
+          <span>•</span>
+          <a 
+            href="https://github.com/olyaiy/simple-flux-web-api-ui"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            GitHub Repository
+          </a>
+        </div>
       </footer>
     </div>
   );
