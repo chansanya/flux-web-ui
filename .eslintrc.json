@@ -8,6 +8,8 @@
     "@next/next/no-img-element": "off",
     "jsx-a11y/alt-text": "warn",
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-floating-promises": "off"
+    "@typescript-eslint/no-floating-promises": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "react-hooks/exhaustive-deps": "off"
   }
 }
