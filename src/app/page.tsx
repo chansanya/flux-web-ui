@@ -10,7 +10,7 @@ export default function Home() {
         <p className="text-muted-foreground mt-2">Generate amazing images with AI</p>
       </header>
 
-      <main className="w-full max-w-4xl mx-auto">
+      <main className="w-full max-w-7xl mx-auto">
         <Tabs defaultValue="generate" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="generate">Generate</TabsTrigger>

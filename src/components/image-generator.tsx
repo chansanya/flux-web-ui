@@ -19,6 +19,7 @@ import { generateImage } from "@/app/actions";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
 import { ImageGeneratorButton } from "./image-generator-button";
+import { Lightbox } from "@/components/ui/lightbox";
 
 const AVAILABLE_MODELS = {
   "flux-pro": "fal-ai/flux-pro/v1.1-ultra",
@@ -29,12 +30,12 @@ const AVAILABLE_MODELS = {
 
 type AspectRatio = "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21";
 
-interface GenerationOptions {
+interface Options {
   prompt: string;
+  num_images: string;
   aspect_ratio: AspectRatio;
   model: keyof typeof AVAILABLE_MODELS;
   seed?: number;
-  num_images?: number;
   enable_safety_checker?: boolean;
   safety_tolerance?: 1 | 2 | 3 | 4 | 5 | 6;
   output_format?: "jpeg" | "png";
@@ -43,14 +44,14 @@ interface GenerationOptions {
 
 export function ImageGenerator() {
   const [isLoading, setIsLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [options, setOptions] = useState<GenerationOptions>({
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [options, setOptions] = useState<Options>({
     prompt: "",
+    num_images: "1",
     aspect_ratio: "16:9",
     model: "flux-pro",
     seed: undefined,
-    num_images: 1,
-    enable_safety_checker: true,
+    enable_safety_checker: false,
     safety_tolerance: 6,
     output_format: "jpeg",
     raw: false,
@@ -58,6 +59,8 @@ export function ImageGenerator() {
   const { toast } = useToast();
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState("");
+  const [cost, setCost] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const isFluxProUltra = options.model === "flux-pro";
 
@@ -84,6 +87,7 @@ export function ImageGenerator() {
     setIsLoading(true);
     setProgress(0);
     setProgressText("Initializing...");
+    setCost(null);
     
     try {
       console.log("Generation started with options:", {
@@ -97,13 +101,15 @@ export function ImageGenerator() {
         apiKey,
         options.prompt, 
         options.aspect_ratio, 
-        options.model
+        options.model,
+        parseInt(options.num_images)
       );
 
       console.log("Generation result:", result);
 
-      if (result.status === "COMPLETED" && result.imageUrl) {
-        setImageUrl(result.imageUrl);
+      if (result.status === "COMPLETED" && result.imageUrls) {
+        setImageUrls(result.imageUrls);
+        if (result.cost) setCost(result.cost);
       }
     } catch (error) {
       console.error("Generation error:", error);
@@ -120,180 +126,222 @@ export function ImageGenerator() {
   };
 
   return (
-    <Card className="flex flex-col md:flex-row min-h-[600px]">
-      <div className="flex-1 border-r overflow-y-auto">
-        <CardHeader>
-          <CardTitle>Generate Image</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Prompt</label>
-            <Textarea
-              placeholder="Enter your prompt here..."
-              value={options.prompt}
-              onChange={(e) => setOptions({ ...options, prompt: e.target.value })}
-              className="h-32"
-            />
-          </div>
+    <>
+      <Card className="flex flex-col md:flex-row min-h-[600px]">
+        <div className="flex-1 border-r overflow-y-auto">
+          <CardHeader>
+            <CardTitle>Generate Image</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Prompt</label>
+              <Textarea
+                placeholder="Enter your prompt here..."
+                value={options.prompt}
+                onChange={(e) => setOptions({ ...options, prompt: e.target.value })}
+                className="h-32"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Model</label>
-            <Select
-              value={options.model}
-              onValueChange={(value: keyof typeof AVAILABLE_MODELS) => 
-                setOptions({ ...options, model: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="flux-pro">Flux Pro (Ultra)</SelectItem>
-                <SelectItem value="flux-lora">Flux LoRA</SelectItem>
-                <SelectItem value="flux-dev">Flux Dev</SelectItem>
-                <SelectItem value="flux-schnell">Flux Schnell</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Model</label>
+              <Select
+                value={options.model}
+                onValueChange={(value: keyof typeof AVAILABLE_MODELS) => 
+                  setOptions({ ...options, model: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="flux-pro">Flux Pro (Ultra)</SelectItem>
+                  <SelectItem value="flux-lora">Flux LoRA</SelectItem>
+                  <SelectItem value="flux-dev">Flux Dev</SelectItem>
+                  <SelectItem value="flux-schnell">Flux Schnell</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Aspect Ratio</label>
-            <Select
-              value={options.aspect_ratio}
-              onValueChange={(value: AspectRatio) => 
-                setOptions({ ...options, aspect_ratio: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="21:9">Ultra Wide (21:9)</SelectItem>
-                <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
-                <SelectItem value="4:3">Standard (4:3)</SelectItem>
-                <SelectItem value="1:1">Square (1:1)</SelectItem>
-                <SelectItem value="3:4">Portrait (3:4)</SelectItem>
-                <SelectItem value="9:16">Mobile (9:16)</SelectItem>
-                <SelectItem value="9:21">Tall (9:21)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Aspect Ratio</label>
+              <Select
+                value={options.aspect_ratio}
+                onValueChange={(value: AspectRatio) => 
+                  setOptions({ ...options, aspect_ratio: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="21:9">Ultra Wide (21:9)</SelectItem>
+                  <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
+                  <SelectItem value="4:3">Standard (4:3)</SelectItem>
+                  <SelectItem value="1:1">Square (1:1)</SelectItem>
+                  <SelectItem value="3:4">Portrait (3:4)</SelectItem>
+                  <SelectItem value="9:16">Mobile (9:16)</SelectItem>
+                  <SelectItem value="9:21">Tall (9:21)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {isFluxProUltra && (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Seed</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                    value={options.seed || ''}
-                    onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
-                    placeholder="Leave blank for random"
+            {isFluxProUltra && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Seed</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      value={options.seed || ''}
+                      onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
+                      placeholder="Leave blank for random"
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
+                    >
+                      Random
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="raw"
+                    checked={options.raw}
+                    onCheckedChange={(checked) => setOptions({ ...options, raw: !!checked })}
                   />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
+                  <label htmlFor="raw" className="text-sm font-medium">
+                    Raw Output (less processed, more natural-looking)
+                  </label>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium">Number of Images</label>
+                    <span className="text-sm text-muted-foreground">{options.num_images}</span>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={4}
+                    step={1}
+                    value={[parseInt(options.num_images)]}
+                    onValueChange={(value) => setOptions({ ...options, num_images: String(value[0]) })}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Safety Tolerance</label>
+                  <Select
+                    value={options.safety_tolerance?.toString()}
+                    onValueChange={(value) => setOptions({ ...options, safety_tolerance: Number(value) as 1 | 2 | 3 | 4 | 5 | 6 })}
                   >
-                    Random
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 - Very Strict</SelectItem>
+                      <SelectItem value="2">2 - Strict</SelectItem>
+                      <SelectItem value="3">3 - Moderate</SelectItem>
+                      <SelectItem value="4">4 - Permissive</SelectItem>
+                      <SelectItem value="5">5 - Very Permissive</SelectItem>
+                      <SelectItem value="6">6 - Unrestricted</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Safety Tolerance</label>
-                <Select
-                  value={options.safety_tolerance?.toString()}
-                  onValueChange={(value) => setOptions({ ...options, safety_tolerance: Number(value) as 1 | 2 | 3 | 4 | 5 | 6 })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 - Very Strict</SelectItem>
-                    <SelectItem value="2">2 - Strict</SelectItem>
-                    <SelectItem value="3">3 - Moderate</SelectItem>
-                    <SelectItem value="4">4 - Permissive</SelectItem>
-                    <SelectItem value="5">5 - Very Permissive</SelectItem>
-                    <SelectItem value="6">6 - Unrestricted</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Output Format</label>
-                <Select
-                  value={options.output_format}
-                  onValueChange={(value: "jpeg" | "png") => setOptions({ ...options, output_format: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="jpeg">JPEG</SelectItem>
-                    <SelectItem value="png">PNG</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="raw"
-                  checked={options.raw}
-                  onCheckedChange={(checked) => setOptions({ ...options, raw: !!checked })}
-                />
-                <label htmlFor="raw" className="text-sm font-medium">
-                  Raw Output (less processed, more natural-looking)
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="safety"
-                  checked={options.enable_safety_checker}
-                  onCheckedChange={(checked) => setOptions({ ...options, enable_safety_checker: !!checked })}
-                />
-                <label htmlFor="safety" className="text-sm font-medium">
-                  Enable Safety Checker
-                </label>
-              </div>
-            </>
-          )}
-
-          <ImageGeneratorButton 
-            isLoading={isLoading} 
-            onGenerate={handleGenerate} 
-          />
-        </CardContent>
-      </div>
-
-      <div className="flex-1 p-6 flex flex-col items-center justify-center bg-muted/10">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt="Generated image"
-            width={512}
-            height={512}
-            className="rounded-lg shadow-lg"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground w-full max-w-[512px]">
-            {isLoading ? (
-              <div className="w-full space-y-4">
-                <div className="border-2 border-dashed rounded-lg w-full aspect-video flex flex-col items-center justify-center p-4">
-                  <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                  <p className="text-center font-medium">{progressText}</p>
-                  <Progress value={progress} className="w-full mt-4" />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Output Format</label>
+                  <Select
+                    value={options.output_format}
+                    onValueChange={(value: "jpeg" | "png") => setOptions({ ...options, output_format: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jpeg">JPEG</SelectItem>
+                      <SelectItem value="png">PNG</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            ) : (
-              <div className="border-2 border-dashed rounded-lg w-full aspect-video flex items-center justify-center">
-                <p>Generated image will appear here</p>
-              </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="safety"
+                    checked={options.enable_safety_checker}
+                    onCheckedChange={(checked) => setOptions({ ...options, enable_safety_checker: !!checked })}
+                  />
+                  <label htmlFor="safety" className="text-sm font-medium">
+                    Enable Safety Checker
+                  </label>
+                </div>
+              </>
             )}
-          </div>
-        )}
-      </div>
-    </Card>
+
+            <ImageGeneratorButton 
+              isLoading={isLoading} 
+              onGenerate={handleGenerate} 
+            />
+          </CardContent>
+        </div>
+
+        <div className="flex-1 p-6 flex flex-col items-center justify-center bg-muted/10">
+          {imageUrls.length > 0 ? (
+            <div className="space-y-4">
+              <div className={`grid ${imageUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                {imageUrls.map((url, index) => (
+                  <div
+                    key={index}
+                    className="cursor-pointer transition-transform hover:scale-[1.02]"
+                    onClick={() => setSelectedImage(url)}
+                  >
+                    <Image
+                      src={url}
+                      alt={`Generated image ${index + 1}`}
+                      width={1024}
+                      height={1024}
+                      className="rounded-lg shadow-lg w-full h-auto"
+                    />
+                  </div>
+                ))}
+              </div>
+              {cost !== null && (
+                <div className="text-sm text-muted-foreground text-center">
+                  Generation Cost: ${cost.toFixed(3)}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-muted-foreground w-full max-w-[512px]">
+              {isLoading ? (
+                <div className="w-full space-y-4">
+                  <div className="border-2 border-dashed rounded-lg w-full aspect-video flex flex-col items-center justify-center p-4">
+                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                    <p className="text-center font-medium">{progressText}</p>
+                    <Progress value={progress} className="w-full mt-4" />
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed rounded-lg w-full aspect-video flex items-center justify-center">
+                  <p>Generated image will appear here</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {selectedImage && (
+        <Lightbox
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+          imageUrl={selectedImage}
+        />
+      )}
+    </>
   );
 }

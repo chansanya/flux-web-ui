@@ -1,6 +1,7 @@
 "use server";
 
 import { fal } from "@fal-ai/client";
+import { Result } from "@fal-ai/client";
 
 // Configure FAL client
 fal.config({
@@ -20,7 +21,7 @@ interface FluxProUltraInput {
   prompt: string;
   seed?: number;
   sync_mode?: boolean;
-  num_images?: number;
+  num_images?: string;
   enable_safety_checker?: boolean;
   safety_tolerance?: "1" | "2" | "3" | "4" | "5" | "6";
   output_format?: "jpeg" | "png";
@@ -30,19 +31,17 @@ interface FluxProUltraInput {
   image_prompt_strength?: number;
 }
 
-interface FalApiResponse {
-  status: string;
-  data?: {
-    images?: Array<{
-      url: string;
-      width?: number;
-      height?: number;
-      content_type?: string;
-    }>;
-  };
-  logs?: Array<{
-    message: string;
-  }>;
+const COST_PER_MEGAPIXEL = {
+  "flux-pro": 0.05,
+  "flux-dev": 0.025,
+  "flux-schnell": 0.003,
+  "flux-lora": 0.025,
+} as const;
+
+function calculateImageCost(width: number, height: number, model: keyof typeof AVAILABLE_MODELS): number {
+  const megapixels = (width * height) / 1000000;
+  const costPerMp = COST_PER_MEGAPIXEL[model as keyof typeof COST_PER_MEGAPIXEL] || 0;
+  return Number((megapixels * costPerMp).toFixed(3));
 }
 
 export async function generateImage(
@@ -54,7 +53,8 @@ export async function generateImage(
 ): Promise<{
   status: string;
   logs?: string;
-  imageUrl?: string;
+  imageUrls: string[];
+  cost?: number;
 }> {
   console.log("Server action started:", {
     model: AVAILABLE_MODELS[model],
@@ -68,31 +68,35 @@ export async function generateImage(
   });
 
   try {
-    const result = await fal.subscribe<FalApiResponse>(AVAILABLE_MODELS[model], {
+    const result = await fal.subscribe(AVAILABLE_MODELS[model], {
       input: {
         prompt,
         aspect_ratio: aspectRatio,
-        num_images: numImages,
-        output_format: "jpeg",
+        num_images: Math.min(Math.max(1, numImages), 4),
         enable_safety_checker: true,
+        safety_tolerance: "2",
+        output_format: "jpeg",
       },
       logs: true,
     });
 
-    console.log("FAL API response:", {
-      status: result.status,
-      logs: result.logs?.map(log => log.message),
-      hasImages: !!result?.data?.images?.length,
-    });
-
-    if (!result?.data?.images?.[0]?.url) {
-      throw new Error("No image URL in response");
+    if (!result?.data?.images?.length) {
+      throw new Error("No images in response");
     }
+
+    // Calculate total cost for all images
+    const totalCost = result.data.images.reduce((acc, image) => {
+      return acc + calculateImageCost(
+        image.width || 2048,
+        image.height || 2048,
+        model
+      );
+    }, 0);
 
     return {
       status: "COMPLETED",
-      logs: result.logs?.map(log => log.message).join("\n"),
-      imageUrl: result.data.images[0].url
+      imageUrls: result.data.images.map(img => img.url),
+      cost: totalCost
     };
   } catch (error) {
     console.error("Image generation failed:", error);
