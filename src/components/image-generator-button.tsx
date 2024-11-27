@@ -5,24 +5,35 @@ import { Loader2 } from "lucide-react";
 
 interface ImageGeneratorButtonProps {
   isLoading: boolean;
-  onGenerate: () => Promise<void>;
+  onGenerate: () => void;
+  shortcutText?: string;
 }
 
-export function ImageGeneratorButton({ isLoading, onGenerate }: ImageGeneratorButtonProps) {
+export function ImageGeneratorButton({ 
+  isLoading, 
+  onGenerate,
+  shortcutText 
+}: ImageGeneratorButtonProps) {
   return (
-    <Button 
-      onClick={onGenerate} 
-      className="w-full" 
+    <Button
+      onClick={onGenerate}
       disabled={isLoading}
-      size="lg"
+      className="w-full"
     >
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Generating...</span>
-        </div>
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Generating...
+        </>
       ) : (
-        <span>Generate Image</span>
+        <div className="flex items-center justify-center w-full">
+          <span>Generate</span>
+          {shortcutText && (
+            <span className="ml-2 text-xs text-muted-foreground">
+              ({shortcutText})
+            </span>
+          )}
+        </div>
       )}
     </Button>
   );

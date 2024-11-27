@@ -1,7 +1,6 @@
 "use server";
 
 import { fal } from "@fal-ai/client";
-import { Result } from "@fal-ai/client";
 
 // Configure FAL client
 fal.config({
@@ -49,7 +48,14 @@ export async function generateImage(
   prompt: string,
   aspectRatio: AspectRatio,
   model: keyof typeof AVAILABLE_MODELS,
-  numImages: number = 1
+  numImages: number = 1,
+  options?: {
+    seed?: number;
+    enable_safety_checker?: boolean;
+    safety_tolerance?: string;
+    output_format?: "jpeg" | "png";
+    raw?: boolean;
+  }
 ): Promise<{
   status: string;
   logs?: string;
@@ -73,9 +79,11 @@ export async function generateImage(
         prompt,
         aspect_ratio: aspectRatio,
         num_images: Math.min(Math.max(1, numImages), 4),
-        enable_safety_checker: true,
-        safety_tolerance: "2",
-        output_format: "jpeg",
+        enable_safety_checker: options?.enable_safety_checker ?? false,
+        safety_tolerance: options?.safety_tolerance ?? "6",
+        output_format: options?.output_format ?? "jpeg",
+        ...(options?.seed !== undefined && { seed: options.seed }),
+        ...(options?.raw !== undefined && { raw: options.raw }),
       },
       logs: true,
     });
@@ -109,8 +117,8 @@ export async function generateFluxProUltraImage({
   prompt,
   seed,
   sync_mode = false,
-  num_images = 1,
-  enable_safety_checker = true,
+  num_images = "1",
+  enable_safety_checker = false,
   safety_tolerance = "6",
   output_format = "jpeg",
   aspect_ratio = "16:9",
@@ -128,7 +136,7 @@ export async function generateFluxProUltraImage({
         prompt,
         seed,
         sync_mode,
-        num_images,
+        num_images: Number(num_images),
         enable_safety_checker,
         safety_tolerance,
         output_format,
@@ -181,7 +189,7 @@ export async function generateImageRealtime(
     prompt,
     aspect_ratio: aspectRatio,
     output_format: "jpeg",
-    enable_safety_checker: true,
+    enable_safety_checker: false,
   });
 }
 
