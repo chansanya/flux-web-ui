@@ -12,6 +12,8 @@ interface LightboxProps {
 }
 
 export function Lightbox({ isOpen, onClose, imageUrl }: LightboxProps) {
+  if (!imageUrl) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] h-[90vh] p-0">
@@ -33,6 +35,11 @@ export function Lightbox({ isOpen, onClose, imageUrl }: LightboxProps) {
             className="object-contain"
             quality={100}
             priority
+            sizes="90vw"
+            onError={(e) => {
+              console.error('Failed to load image:', imageUrl);
+              onClose();
+            }}
           />
         </div>
       </DialogContent>

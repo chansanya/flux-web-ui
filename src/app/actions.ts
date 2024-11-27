@@ -112,11 +112,14 @@ export async function generateImage(
       );
     }, 0);
 
-    return {
+    const response = {
       status: "COMPLETED",
       imageUrls: result.data.images.map(img => img.url),
       cost: totalCost
     };
+
+    // Add to browser storage in the client component
+    return response;
   } catch (error) {
     console.error("Image generation failed:", {
       error,

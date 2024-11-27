@@ -1,5 +1,6 @@
 import { ApiKeyForm } from "@/components/api-key-form";
 import { ImageGenerator } from "@/components/image-generator";
+import { ImageHistory } from "@/components/image-history";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
@@ -12,13 +13,18 @@ export default function Home() {
 
       <main className="w-full max-w-7xl mx-auto">
         <Tabs defaultValue="generate" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="generate">Generate</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           
           <TabsContent value="generate" className="mt-6">
             <ImageGenerator />
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6">
+            <ImageHistory />
           </TabsContent>
           
           <TabsContent value="settings" className="mt-6">

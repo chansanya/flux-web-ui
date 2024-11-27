@@ -167,6 +167,37 @@ export function ImageGenerator() {
       if (result.status === "COMPLETED" && result.imageUrls) {
         setImageUrls(result.imageUrls);
         if (result.cost) setCost(result.cost);
+
+        // Save to history
+        const historyItem = {
+          id: crypto.randomUUID(),
+          imageUrl: result.imageUrls[0],
+          prompt: options.prompt,
+          model: options.model,
+          cost: result.cost || 0,
+          createdAt: new Date().toISOString(),
+          requestDetails: {
+            prompt: options.prompt,
+            aspectRatio: options.aspect_ratio,
+            model: options.model,
+            numImages: parseInt(options.num_images),
+            options: {
+              seed: options.seed,
+              safety_tolerance: options.safety_tolerance,
+              output_format: options.output_format,
+              raw: options.raw,
+              enable_safety_checker: options.enable_safety_checker,
+            },
+          },
+          responseDetails: result,
+          logs: result.logs
+        };
+
+        const existingHistory = JSON.parse(localStorage.getItem("imageHistory") || "[]");
+        localStorage.setItem(
+          "imageHistory",
+          JSON.stringify([historyItem, ...existingHistory].slice(0, 50)) // Keep last 50 images
+        );
       }
     } catch (error) {
       console.error("Generation error:", error);
