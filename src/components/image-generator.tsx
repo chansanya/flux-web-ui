@@ -13,13 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import { generateImage } from "@/app/actions";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
 import { ImageGeneratorButton } from "./image-generator-button";
 import { Lightbox } from "@/components/ui/lightbox";
+import { ToastAction } from "@/components/ui/toast";
 
 const AVAILABLE_MODELS = {
   "flux-pro": "fal-ai/flux-pro/v1.1-ultra",
@@ -42,13 +43,12 @@ interface Options {
   raw?: boolean;
 }
 
-interface RequestDetails {
-  prompt: string;
-  model: string;
-  aspectRatio: string;
-  numImages: number;
-  timestamp: string;
-  additionalOptions?: Record<string, any>;
+interface ApiError {
+  message: string;
+  status?: number;
+  body?: {
+    detail?: string;
+  };
 }
 
 export function ImageGenerator() {
@@ -70,7 +70,12 @@ export function ImageGenerator() {
   const [progressText, setProgressText] = useState("");
   const [cost, setCost] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [requestDetails, setRequestDetails] = useState<RequestDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<{
+    input?: any;
+    output?: any;
+  }>({});
 
   const isFluxProUltra = options.model === "flux-pro";
 
@@ -110,20 +115,19 @@ export function ImageGenerator() {
     setProgress(0);
     setProgressText("Initializing...");
     setCost(null);
+    setError(null);
     
     try {
       console.log("Generation started with options:", {
         aspect_ratio: options.aspect_ratio,
         model: options.model,
-        // Excluding API key for security
       });
 
-      setRequestDetails({
+      const inputDetails = {
+        aspect_ratio: options.aspect_ratio,
+        model: options.model,
         prompt: options.prompt,
-        model: AVAILABLE_MODELS[options.model],
-        aspectRatio: options.aspect_ratio,
         numImages: parseInt(options.num_images),
-        timestamp: new Date().toLocaleString(),
         additionalOptions: isFluxProUltra ? {
           seed: options.seed,
           safety_tolerance: options.safety_tolerance,
@@ -131,7 +135,9 @@ export function ImageGenerator() {
           raw: options.raw,
           enable_safety_checker: options.enable_safety_checker,
         } : undefined,
-      });
+      };
+
+      setDebugInfo({ input: inputDetails });
 
       const result = await generateImage(
         apiKey,
@@ -148,6 +154,14 @@ export function ImageGenerator() {
         }
       );
 
+      setDebugInfo(prev => ({
+        ...prev,
+        output: {
+          ...result,
+          cost: result.cost ? `$${result.cost.toFixed(3)}` : 'N/A'
+        }
+      }));
+
       console.log("Generation result:", result);
 
       if (result.status === "COMPLETED" && result.imageUrls) {
@@ -156,10 +170,25 @@ export function ImageGenerator() {
       }
     } catch (error) {
       console.error("Generation error:", error);
+      
+      // Extract error details
+      const apiError = error as ApiError;
+      const errorDetail = apiError?.body?.detail;
+      
+      // Set error state
+      setError(errorDetail || apiError.message || "An unexpected error occurred");
+      
+      // Show toast with action if it's a balance error
       toast({
-        title: "Error",
-        description: "Failed to generate image",
+        title: "Generation Failed",
+        description: errorDetail || apiError.message || "An unexpected error occurred",
         variant: "destructive",
+        duration: 5000,
+        action: errorDetail?.includes('balance') ? (
+          <ToastAction altText="Go to Billing" onClick={() => window.open('https://fal.ai/dashboard/billing', '_blank')}>
+            Go to Billing
+          </ToastAction>
+        ) : undefined
       });
     } finally {
       setIsLoading(false);
@@ -181,7 +210,10 @@ export function ImageGenerator() {
               <Textarea
                 placeholder="Enter your prompt here..."
                 value={options.prompt}
-                onChange={(e) => setOptions({ ...options, prompt: e.target.value })}
+                onChange={(e) => {
+                  const newPrompt = e.target.value;
+                  setOptions(prev => ({ ...prev, prompt: newPrompt }));
+                }}
                 className="h-32"
               />
             </div>
@@ -360,38 +392,6 @@ export function ImageGenerator() {
                 ))}
               </div>
               
-              {requestDetails && (
-                <div className="mt-4 p-4 rounded-lg bg-muted/50 text-sm space-y-2">
-                  <h3 className="font-medium">Request Details:</h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <div>
-                      <span className="text-muted-foreground">Timestamp:</span> {requestDetails.timestamp}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Model:</span> {requestDetails.model}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Aspect Ratio:</span> {requestDetails.aspectRatio}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Number of Images:</span> {requestDetails.numImages}
-                    </div>
-                    {requestDetails.additionalOptions && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Additional Options:</span>
-                        <pre className="mt-1 text-xs overflow-x-auto">
-                          {JSON.stringify(requestDetails.additionalOptions, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Prompt:</span>
-                      <p className="mt-1">{requestDetails.prompt}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               {cost !== null && (
                 <div className="text-sm text-muted-foreground text-center">
                   Generation Cost: ${cost.toFixed(3)}
@@ -400,23 +400,72 @@ export function ImageGenerator() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center text-muted-foreground w-full max-w-[512px]">
-              {isLoading ? (
-                <div className="w-full space-y-4">
-                  <div className="border-2 border-dashed rounded-lg w-full aspect-video flex flex-col items-center justify-center p-4">
-                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                    <p className="text-center font-medium">{progressText}</p>
-                    <Progress value={progress} className="w-full mt-4" />
-                  </div>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed rounded-lg w-full aspect-video flex items-center justify-center">
-                  <p>Generated image will appear here</p>
+              {!imageUrls.length && (
+                <div className="flex flex-col items-center justify-center text-muted-foreground w-full max-w-[512px]">
+                  {isLoading ? (
+                    <div className="w-full space-y-4">
+                      <div className="border-2 border-dashed rounded-lg w-full aspect-video flex flex-col items-center justify-center p-4">
+                        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                        <p className="text-center font-medium">{progressText}</p>
+                        <Progress value={progress} className="w-full mt-4" />
+                      </div>
+                    </div>
+                  ) : error ? (
+                    <div className="border-2 border-destructive rounded-lg w-full aspect-video flex flex-col items-center justify-center p-8 space-y-4">
+                      <div className="text-destructive text-center space-y-2">
+                        <p className="font-medium">Generation Failed</p>
+                        <p className="text-sm">{error}</p>
+                        {error.includes('balance') && (
+                          <Button 
+                            variant="outline" 
+                            className="mt-4"
+                            onClick={() => window.open('https://fal.ai/dashboard/billing', '_blank')}
+                          >
+                            Go to Billing
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed rounded-lg w-full aspect-video flex items-center justify-center">
+                      <p>Generated image will appear here</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
         </div>
       </Card>
+
+      {imageUrls.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader className="cursor-pointer" onClick={() => setShowDebug(!showDebug)}>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Debug Information</CardTitle>
+              {showDebug ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+          </CardHeader>
+          {showDebug && (
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Input Parameters</h3>
+                  <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-[400px]">
+                    {JSON.stringify(debugInfo.input, null, 2)}
+                  </pre>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Output Response</h3>
+                  <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-[400px]">
+                    {JSON.stringify(debugInfo.output, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {selectedImage && (
         <Lightbox

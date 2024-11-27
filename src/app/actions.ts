@@ -62,10 +62,11 @@ export async function generateImage(
   imageUrls: string[];
   cost?: number;
 }> {
-  console.log("Server action started:", {
+  console.log("🔵 Generation Input:", {
     model: AVAILABLE_MODELS[model],
     aspectRatio,
     numImages,
+    options,
     // Excluding API key and prompt for security
   });
 
@@ -88,6 +89,16 @@ export async function generateImage(
       logs: true,
     });
 
+    console.log("🟢 Generation Output:", {
+      status: "success",
+      images: result.data.images.map(img => ({
+        url: img.url,
+        width: img.width,
+        height: img.height
+      })),
+      logs: result
+    });
+
     if (!result?.data?.images?.length) {
       throw new Error("No images in response");
     }
@@ -107,8 +118,18 @@ export async function generateImage(
       cost: totalCost
     };
   } catch (error) {
-    console.error("Image generation failed:", error);
-    throw new Error("Failed to generate image");
+    console.error("Image generation failed:", {
+      error,
+      status: (error as any)?.status,
+      body: (error as any)?.body,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
+    const errorMessage = error instanceof Error 
+      ? `${error.message}${(error as any)?.status ? ` (Status: ${(error as any).status})` : ''}`
+      : 'Unknown error';
+      
+    throw new Error(`Failed to generate image: ${errorMessage}`);
   }
 }
 
@@ -147,10 +168,16 @@ export async function generateFluxProUltraImage({
       },
       logs: true,
       onQueueUpdate: (update) => {
+        console.log("Queue update:", update);
         if (update.status === "IN_PROGRESS") {
           console.log("Generation progress:", update.logs);
         }
       },
+    });
+
+    console.log("FluxPro generation response:", {
+      images: result.data.images,
+      logs: result
     });
 
     if (!result?.data?.images?.[0]?.url) {
@@ -159,8 +186,18 @@ export async function generateFluxProUltraImage({
 
     return result.data.images[0].url;
   } catch (error) {
-    console.error("Image generation failed:", error);
-    throw new Error("Failed to generate image");
+    console.error("Image generation failed:", {
+      error,
+      status: (error as any)?.status,
+      body: (error as any)?.body,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
+    const errorMessage = error instanceof Error 
+      ? `${error.message}${(error as any)?.status ? ` (Status: ${(error as any).status})` : ''}`
+      : 'Unknown error';
+      
+    throw new Error(`Failed to generate image: ${errorMessage}`);
   }
 }
 
@@ -178,6 +215,10 @@ export async function generateImageRealtime(
   const connection = fal.realtime.connect(AVAILABLE_MODELS[model], {
     connectionKey: "image-generation",
     onResult: (result) => {
+      console.log("Realtime generation response:", {
+        images: result.data.images,
+        logs: result.logs,
+      });
       return {
         status: "COMPLETED",
         imageUrl: result.data.images[0].url
