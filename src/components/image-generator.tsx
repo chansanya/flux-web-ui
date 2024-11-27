@@ -42,6 +42,15 @@ interface Options {
   raw?: boolean;
 }
 
+interface RequestDetails {
+  prompt: string;
+  model: string;
+  aspectRatio: string;
+  numImages: number;
+  timestamp: string;
+  additionalOptions?: Record<string, any>;
+}
+
 export function ImageGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -61,6 +70,7 @@ export function ImageGenerator() {
   const [progressText, setProgressText] = useState("");
   const [cost, setCost] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [requestDetails, setRequestDetails] = useState<RequestDetails | null>(null);
 
   const isFluxProUltra = options.model === "flux-pro";
 
@@ -108,6 +118,21 @@ export function ImageGenerator() {
         // Excluding API key for security
       });
 
+      setRequestDetails({
+        prompt: options.prompt,
+        model: AVAILABLE_MODELS[options.model],
+        aspectRatio: options.aspect_ratio,
+        numImages: parseInt(options.num_images),
+        timestamp: new Date().toLocaleString(),
+        additionalOptions: isFluxProUltra ? {
+          seed: options.seed,
+          safety_tolerance: options.safety_tolerance,
+          output_format: options.output_format,
+          raw: options.raw,
+          enable_safety_checker: options.enable_safety_checker,
+        } : undefined,
+      });
+
       const result = await generateImage(
         apiKey,
         options.prompt, 
@@ -117,7 +142,7 @@ export function ImageGenerator() {
         {
           seed: options.seed,
           enable_safety_checker: options.enable_safety_checker,
-          safety_tolerance: options.safety_tolerance?.toString(),
+          safety_tolerance: options.safety_tolerance?.toString() as "1" | "2" | "3" | "4" | "5" | "6" | undefined,
           output_format: options.output_format,
           raw: options.raw,
         }
@@ -316,7 +341,7 @@ export function ImageGenerator() {
 
         <div className="flex-1 p-6 flex flex-col items-center justify-center bg-muted/10">
           {imageUrls.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-4 w-full">
               <div className={`grid ${imageUrls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 {imageUrls.map((url, index) => (
                   <div
@@ -334,6 +359,39 @@ export function ImageGenerator() {
                   </div>
                 ))}
               </div>
+              
+              {requestDetails && (
+                <div className="mt-4 p-4 rounded-lg bg-muted/50 text-sm space-y-2">
+                  <h3 className="font-medium">Request Details:</h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div>
+                      <span className="text-muted-foreground">Timestamp:</span> {requestDetails.timestamp}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Model:</span> {requestDetails.model}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Aspect Ratio:</span> {requestDetails.aspectRatio}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Number of Images:</span> {requestDetails.numImages}
+                    </div>
+                    {requestDetails.additionalOptions && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Additional Options:</span>
+                        <pre className="mt-1 text-xs overflow-x-auto">
+                          {JSON.stringify(requestDetails.additionalOptions, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Prompt:</span>
+                      <p className="mt-1">{requestDetails.prompt}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {cost !== null && (
                 <div className="text-sm text-muted-foreground text-center">
                   Generation Cost: ${cost.toFixed(3)}
