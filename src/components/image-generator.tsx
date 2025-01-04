@@ -298,17 +298,17 @@ export function ImageGenerator() {
         options.prompt,
         isFluxProUltra ? options.aspect_ratio || "16:9" : options.image_size,
         options.model,
-        parseInt(options.num_images),
+        isFluxProUltra ? 1 : parseInt(options.num_images),
         {
           seed: options.seed,
-          enable_safety_checker: options.enable_safety_checker,
-          safety_tolerance: options.safety_tolerance?.toString() as "1" | "2" | "3" | "4" | "5" | "6",
           output_format: options.output_format,
           raw: options.raw,
           sync_mode: options.sync_mode,
-          image_url: options.image_url,
-          image_prompt_strength: options.image_prompt_strength,
           ...(isFluxProUltra ? {} : {
+            enable_safety_checker: options.enable_safety_checker,
+            safety_tolerance: options.safety_tolerance?.toString() as "1" | "2" | "3" | "4" | "5" | "6",
+            image_url: options.image_url,
+            image_prompt_strength: options.image_prompt_strength,
             num_inference_steps: options.num_inference_steps,
             guidance_scale: options.guidance_scale,
             strength: options.strength,
@@ -512,26 +512,6 @@ export function ImageGenerator() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Number of Images</label>
-                      <Select
-                        value={options.num_images}
-                        onValueChange={(value) => setOptions({ ...options, num_images: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 Image</SelectItem>
-                          <SelectItem value="2">2 Images</SelectItem>
-                          <SelectItem value="3">3 Images</SelectItem>
-                          <SelectItem value="4">4 Images</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
                       <label className="text-sm font-medium">Output Format</label>
                       <Select
                         value={options.output_format}
@@ -546,24 +526,24 @@ export function ImageGenerator() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Seed (Optional)</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                          value={options.seed || ''}
-                          onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
-                          placeholder="Leave blank for random"
-                        />
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
-                        >
-                          Random
-                        </Button>
-                      </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Seed (Optional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        value={options.seed || ''}
+                        onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
+                        placeholder="Leave blank for random"
+                      />
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
+                      >
+                        Random
+                      </Button>
                     </div>
                   </div>
 
@@ -769,63 +749,65 @@ export function ImageGenerator() {
               )}
             </div>
 
-            <div className="grid gap-4 mt-4">
-              <div className="grid gap-2">
-                <label htmlFor="image-size" className="text-sm font-medium">
-                  Image Size
-                </label>
-                <Select
-                  value={options.image_size}
-                  onValueChange={(value) =>
-                    setOptions((prev) => ({ ...prev, image_size: value as Options["image_size"] }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select image size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="square_hd">Square HD</SelectItem>
-                    <SelectItem value="square">Square</SelectItem>
-                    <SelectItem value="portrait_4_3">Portrait 4:3</SelectItem>
-                    <SelectItem value="portrait_16_9">Portrait 16:9</SelectItem>
-                    <SelectItem value="landscape_4_3">Landscape 4:3</SelectItem>
-                    <SelectItem value="landscape_16_9">Landscape 16:9</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {!isFluxProUltra && (
+              <>
+                <div className="grid gap-2">
+                  <label htmlFor="image-size" className="text-sm font-medium">
+                    Image Size
+                  </label>
+                  <Select
+                    value={options.image_size}
+                    onValueChange={(value) =>
+                      setOptions((prev) => ({ ...prev, image_size: value as Options["image_size"] }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select image size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="square_hd">Square HD</SelectItem>
+                      <SelectItem value="square">Square</SelectItem>
+                      <SelectItem value="portrait_4_3">Portrait 4:3</SelectItem>
+                      <SelectItem value="portrait_16_9">Portrait 16:9</SelectItem>
+                      <SelectItem value="landscape_4_3">Landscape 4:3</SelectItem>
+                      <SelectItem value="landscape_16_9">Landscape 16:9</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="grid gap-2">
-                <label htmlFor="inference-steps" className="text-sm font-medium">
-                  Inference Steps ({options.num_inference_steps})
-                </label>
-                <Slider
-                  id="inference-steps"
-                  min={1}
-                  max={50}
-                  step={1}
-                  value={[options.num_inference_steps || 28]}
-                  onValueChange={([value]) =>
-                    setOptions((prev) => ({ ...prev, num_inference_steps: value }))
-                  }
-                />
-              </div>
+                <div className="grid gap-2">
+                  <label htmlFor="inference-steps" className="text-sm font-medium">
+                    Inference Steps ({options.num_inference_steps})
+                  </label>
+                  <Slider
+                    id="inference-steps"
+                    min={1}
+                    max={50}
+                    step={1}
+                    value={[options.num_inference_steps || 28]}
+                    onValueChange={([value]) =>
+                      setOptions((prev) => ({ ...prev, num_inference_steps: value }))
+                    }
+                  />
+                </div>
 
-              <div className="grid gap-2">
-                <label htmlFor="guidance-scale" className="text-sm font-medium">
-                  Guidance Scale ({options.guidance_scale})
-                </label>
-                <Slider
-                  id="guidance-scale"
-                  min={1}
-                  max={20}
-                  step={0.1}
-                  value={[options.guidance_scale || 3.5]}
-                  onValueChange={([value]) =>
-                    setOptions((prev) => ({ ...prev, guidance_scale: value }))
-                  }
-                />
-              </div>
-            </div>
+                <div className="grid gap-2">
+                  <label htmlFor="guidance-scale" className="text-sm font-medium">
+                    Guidance Scale ({options.guidance_scale})
+                  </label>
+                  <Slider
+                    id="guidance-scale"
+                    min={1}
+                    max={20}
+                    step={0.1}
+                    value={[options.guidance_scale || 3.5]}
+                    onValueChange={([value]) =>
+                      setOptions((prev) => ({ ...prev, guidance_scale: value }))
+                    }
+                  />
+                </div>
+              </>
+            )}
 
             <ImageGeneratorButton 
               isLoading={isLoading} 

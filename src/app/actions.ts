@@ -30,7 +30,6 @@ interface FluxProUltraInput {
   aspect_ratio?: "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21";
   seed?: number;
   sync_mode?: boolean;
-  num_images?: number;
   output_format?: "jpeg" | "png";
   raw?: boolean;
 }
@@ -200,9 +199,12 @@ export async function generateImage(
       // Add model-specific parameters
       const modelInput = model === "flux-1.1-pro" 
         ? {
-            ...baseInput,
+            prompt: baseInput.prompt,
             aspect_ratio: size_or_ratio,
             raw: options?.raw,
+            output_format: baseInput.output_format,
+            sync_mode: baseInput.sync_mode,
+            ...(options?.seed !== undefined && { seed: options.seed }),
           } as FluxProUltraInput
         : model === "flux-img2img"
         ? {
