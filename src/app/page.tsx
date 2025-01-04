@@ -7,8 +7,8 @@ export default function Home() {
   return (
     <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-8 pb-20 gap-8 sm:p-20">
       <header className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight">FAL.AI Studio</h1>
-        <p className="text-muted-foreground mt-2">Generate amazing images with AI</p>
+        <h1 className="text-4xl font-bold tracking-tight">FAL.AI Flux 1.1 Pro Studio</h1>
+        <p className="text-muted-foreground mt-2">Generate amazing images with Flux 1.1 Pro - Next generation text-to-image model</p>
       </header>
 
       <main className="w-full max-w-7xl mx-auto">
