@@ -1,40 +1,36 @@
 import { ApiKeyForm } from "@/components/api-key-form";
 import { ImageGenerator } from "@/components/image-generator";
 import { ImageHistory } from "@/components/image-history";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-8 pb-20 gap-8 sm:p-20">
-      <header className="text-center">
+    <div className="flex flex-col min-h-screen">
+      <header className="text-center py-8 px-4">
         <h1 className="text-4xl font-bold tracking-tight">FAL.AI Flux 1.1 Pro Studio</h1>
         <p className="text-muted-foreground mt-2">Generate amazing images with Flux 1.1 Pro - Next generation text-to-image model</p>
       </header>
 
-      <main className="w-full max-w-7xl mx-auto">
-        <Tabs defaultValue="generate" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="generate">Generate</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="generate" className="mt-6">
-            <ImageGenerator />
-          </TabsContent>
+      <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 pb-8 space-y-16">
+        <section>
+          <h2 className="text-2xl font-semibold mb-6">Image Generation</h2>
+          <ImageGenerator />
+        </section>
 
-          <TabsContent value="history" className="mt-6">
+        <section>
+          <h2 className="text-2xl font-semibold mb-6">Generated Images</h2>
+          <div className="min-h-[600px]">
             <ImageHistory />
-          </TabsContent>
-          
-          <TabsContent value="settings" className="mt-6">
-            <ApiKeyForm />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </section>
+
+        <section className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-semibold mb-6">Settings</h2>
+          <ApiKeyForm />
+        </section>
       </main>
 
-      <footer className="text-center text-sm text-muted-foreground">
-        <div className="flex items-center justify-center gap-4 flex-wrap">
+      <footer className="py-6 text-center text-sm text-muted-foreground border-t mt-8">
+        <div className="flex items-center justify-center gap-4 flex-wrap px-4">
           <p>Powered by FAL.AI and Next.js</p>
           <span>•</span>
           <p>A simple AI frontend for Flux API</p>

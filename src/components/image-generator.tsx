@@ -15,7 +15,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ChevronDown, ChevronUp, Copy, Download, Share, Undo, X, Upload } from "lucide-react";
 import Image from "next/image";
-import { generateImage, type GenerationError } from "@/app/actions";
+import { generateImage } from "@/app/actions";
+import { type AppError } from "@/types/errors";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
 import { ImageGeneratorButton } from "./image-generator-button";
@@ -186,7 +187,7 @@ export function ImageGenerator() {
   };
 
   const handleError = (error: unknown) => {
-    const generationError = error as GenerationError;
+    const generationError = error as AppError;
     setError(generationError.message);
     
     let toastMessage = "Failed to generate image. Please try again.";
@@ -475,7 +476,7 @@ export function ImageGenerator() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="flux-1-pro">FLUX.1 [pro] - Next Gen</SelectItem>
+                    <SelectItem value="flux-1-pro">Flux.1 Pro</SelectItem>
                     <SelectItem value="flux-1.1-pro">FLUX1.1 [pro] Ultra - High Res</SelectItem>
                     <SelectItem value="flux-lora">Flux LoRA</SelectItem>
                     <SelectItem value="flux-dev">Flux Dev</SelectItem>
@@ -569,6 +570,128 @@ export function ImageGenerator() {
                         Sync Mode
                       </label>
                     </div>
+                  </div>
+                </>
+              ) : options.model === "flux-1-pro" ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Image Size</label>
+                      <Select
+                        value={options.image_size}
+                        onValueChange={(value) =>
+                          setOptions((prev) => ({ ...prev, image_size: value as Options["image_size"] }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select image size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="square_hd">Square HD</SelectItem>
+                          <SelectItem value="square">Square</SelectItem>
+                          <SelectItem value="portrait_4_3">Portrait 4:3</SelectItem>
+                          <SelectItem value="portrait_16_9">Portrait 16:9</SelectItem>
+                          <SelectItem value="landscape_4_3">Landscape 4:3</SelectItem>
+                          <SelectItem value="landscape_16_9">Landscape 16:9</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Output Format</label>
+                      <Select
+                        value={options.output_format}
+                        onValueChange={(value: "jpeg" | "png") => setOptions({ ...options, output_format: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="jpeg">JPEG</SelectItem>
+                          <SelectItem value="png">PNG</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Seed</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          value={options.seed || ''}
+                          onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
+                          placeholder="Leave blank for random"
+                        />
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
+                        >
+                          Random
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Number of Images</label>
+                      <Select
+                        value={options.num_images}
+                        onValueChange={(value) => setOptions({ ...options, num_images: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label htmlFor="inference-steps" className="text-sm font-medium">
+                      Inference Steps ({options.num_inference_steps})
+                    </label>
+                    <Slider
+                      id="inference-steps"
+                      min={1}
+                      max={50}
+                      step={1}
+                      value={[options.num_inference_steps || 28]}
+                      onValueChange={([value]) =>
+                        setOptions((prev) => ({ ...prev, num_inference_steps: value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <label htmlFor="guidance-scale" className="text-sm font-medium">
+                      Guidance Scale ({options.guidance_scale})
+                    </label>
+                    <Slider
+                      id="guidance-scale"
+                      min={1}
+                      max={20}
+                      step={0.1}
+                      value={[options.guidance_scale || 3.5]}
+                      onValueChange={([value]) =>
+                        setOptions((prev) => ({ ...prev, guidance_scale: value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sync_mode"
+                      checked={options.sync_mode}
+                      onCheckedChange={(checked) => setOptions(prev => ({ ...prev, sync_mode: !!checked }))}
+                    />
+                    <label htmlFor="sync_mode" className="text-sm font-medium">
+                      Enable Sync Mode
+                    </label>
                   </div>
                 </>
               ) : (
@@ -749,7 +872,7 @@ export function ImageGenerator() {
               )}
             </div>
 
-            {!isFluxProUltra && (
+            {!isFluxProUltra && options.model !== "flux-1-pro" && (
               <>
                 <div className="grid gap-2">
                   <label htmlFor="image-size" className="text-sm font-medium">
