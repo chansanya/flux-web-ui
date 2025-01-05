@@ -116,3 +116,76 @@ export async function generateImage(
   }
 }
 
+interface Flux11ProOptions {
+  image_size?: "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9" | {
+    width: number;
+    height: number;
+  };
+  seed?: number;
+  num_images?: number;
+  enable_safety_checker?: boolean;
+  safety_tolerance?: "1" | "2" | "3" | "4" | "5" | "6";
+  output_format?: "jpeg" | "png";
+}
+
+interface Flux11ProOutput {
+  images: Array<{
+    url: string;
+    width: number;
+    height: number;
+  }>;
+  meta: {
+    api_cost: number;
+    timings?: Record<string, number>;
+    has_nsfw_concepts?: boolean[];
+  };
+}
+
+export async function generateFlux11Pro(
+  prompt: string,
+  apiKey: string,
+  options?: Flux11ProOptions
+) {
+  try {
+    fal.config({
+      credentials: apiKey,
+    });
+
+    const result = await fal.subscribe("fal-ai/flux-pro/v1.1", {
+      input: {
+        prompt,
+        image_size: options?.image_size || "landscape_4_3",
+        num_images: options?.num_images || 1,
+        enable_safety_checker: false,
+        safety_tolerance: "6",
+        output_format: options?.output_format || "jpeg",
+        ...(options?.seed && { seed: options.seed }),
+      },
+      logs: true,
+      onQueueUpdate: (update) => {
+        if (update.status === "IN_PROGRESS") {
+          update.logs.map((log) => log.message).forEach(console.log);
+        }
+      },
+    });
+
+    const output = result.data as unknown as Flux11ProOutput;
+    console.log("API Response Data:", output);
+    console.log("Request ID:", result.requestId);
+
+    return {
+      status: "COMPLETED",
+      imageUrls: output.images.map((img) => img.url),
+      cost: output.meta?.api_cost,
+      metadata: {
+        timings: output.meta?.timings,
+        has_nsfw_concepts: output.meta?.has_nsfw_concepts,
+      },
+      requestId: result.requestId
+    };
+  } catch (error) {
+    console.error("Flux 1.1 Pro Generation Error:", error);
+    throw handleError(error);
+  }
+}
+

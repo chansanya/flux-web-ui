@@ -1,6 +1,8 @@
 import { ApiKeyForm } from "@/components/api-key-form";
 import { ImageGenerator } from "@/components/image-generator";
 import { ImageHistory } from "@/components/image-history";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -13,7 +15,12 @@ export default function Home() {
       <main className="flex-1 w-full max-w-[1400px] mx-auto px-4 pb-8 space-y-16">
         <section>
           <h2 className="text-2xl font-semibold mb-6">Image Generation</h2>
-          <ImageGenerator />
+          {/* <ImageGenerator /> */}
+          <Button asChild>
+            <Link href="/flux/flux-pro/v1.1-ultra">
+              flux 1.1 pro ultra
+            </Link>
+          </Button>
         </section>
 
         <section>

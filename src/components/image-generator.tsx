@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ChevronDown, ChevronUp, Copy, Download, Share, Undo, X, Upload } from "lucide-react";
 import Image from "next/image";
-import { generateImage } from "@/app/actions";
+import { generateImage, generateFlux11Pro } from "@/app/actions";
 import { type AppError } from "@/types/errors";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
@@ -25,8 +25,8 @@ import { ToastAction } from "@/components/ui/toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AVAILABLE_MODELS = {
+  "flux-1.1-pro": "fal-ai/flux-pro/v1.1",
   "flux-1-pro": "fal-ai/flux-pro/new",
-  "flux-1.1-pro": "fal-ai/flux-pro/v1.1-ultra",
   "flux-lora": "fal-ai/flux-lora",
   "flux-dev": "fal-ai/flux/dev",
   "flux-schnell": "fal-ai/flux/schnell",
@@ -44,21 +44,13 @@ interface FluxImage {
 
 interface Options {
   prompt: string;
-  num_images: string;
   model: keyof typeof AVAILABLE_MODELS;
-  aspect_ratio?: "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21";
   image_size: "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9";
   seed?: number;
-  num_inference_steps?: number;
-  guidance_scale?: number;
-  enable_safety_checker?: boolean;
-  safety_tolerance?: 1 | 2 | 3 | 4 | 5 | 6;
-  output_format?: "jpeg" | "png";
-  raw?: boolean;
-  sync_mode?: boolean;
-  image_url?: string;
-  image_prompt_strength?: number;
-  strength?: number;
+  num_images: number;
+  enable_safety_checker: boolean;
+  safety_tolerance: "1" | "2" | "3" | "4" | "5" | "6";
+  output_format: "jpeg" | "png";
 }
 
 interface ApiError {
@@ -83,16 +75,12 @@ export function ImageGenerator() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [options, setOptions] = useState<Options>({
     prompt: "",
-    num_images: "1",
-    image_size: "landscape_16_9",
-    model: "flux-1-pro",
-    seed: undefined,
-    num_inference_steps: 28,
-    guidance_scale: 3.5,
+    model: "flux-1.1-pro",
+    image_size: "landscape_4_3",
+    num_images: 1,
     enable_safety_checker: false,
-    safety_tolerance: 6,
-    output_format: "jpeg",
-    raw: false,
+    safety_tolerance: "1",
+    output_format: "jpeg"
   });
   
   const [history, setHistory] = useState<GenerationHistory[]>([]);
@@ -294,18 +282,33 @@ export function ImageGenerator() {
       setHistory(prev => [...prev, newHistory]);
       historyIndex.current = history.length;
 
-      const result = await generateImage(
-        apiKey,
-        options.prompt,
-        isFluxProUltra ? options.aspect_ratio || "16:9" : options.image_size,
-        options.model,
-        isFluxProUltra ? 1 : parseInt(options.num_images),
-        {
-          seed: options.seed,
-          output_format: options.output_format,
-          raw: options.raw,
-          sync_mode: options.sync_mode,
-          ...(isFluxProUltra ? {} : {
+      let result;
+      
+      if (isFluxProUltra) {
+        result = await generateFlux11Pro(
+          options.prompt,
+          apiKey,
+          {
+            image_size: options.image_size,
+            seed: options.seed,
+            num_images: options.num_images,
+            enable_safety_checker: false,
+            safety_tolerance: "1",
+            output_format: options.output_format
+          }
+        );
+      } else {
+        result = await generateImage(
+          apiKey,
+          options.prompt,
+          options.image_size,
+          options.model,
+          parseInt(options.num_images),
+          {
+            seed: options.seed,
+            output_format: options.output_format,
+            raw: options.raw,
+            sync_mode: options.sync_mode,
             enable_safety_checker: options.enable_safety_checker,
             safety_tolerance: options.safety_tolerance?.toString() as "1" | "2" | "3" | "4" | "5" | "6",
             image_url: options.image_url,
@@ -313,9 +316,9 @@ export function ImageGenerator() {
             num_inference_steps: options.num_inference_steps,
             guidance_scale: options.guidance_scale,
             strength: options.strength,
-          }),
-        }
-      );
+          }
+        );
+      }
 
       setDebugInfo(prev => ({
         ...prev,
@@ -341,15 +344,12 @@ export function ImageGenerator() {
           createdAt: new Date().toISOString(),
           requestDetails: {
             prompt: options.prompt,
-            aspectRatio: options.image_size,
+            aspectRatio: isFluxProUltra ? options.aspect_ratio : options.image_size,
             model: options.model,
-            numImages: parseInt(options.num_images),
+            numImages: isFluxProUltra ? 1 : parseInt(options.num_images),
             options: {
               seed: options.seed,
-              safety_tolerance: options.safety_tolerance,
               output_format: options.output_format,
-              raw: options.raw,
-              enable_safety_checker: options.enable_safety_checker,
             },
           },
           responseDetails: result,
@@ -476,8 +476,8 @@ export function ImageGenerator() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="flux-1.1-pro">Flux1.1[pro]</SelectItem>
                     <SelectItem value="flux-1-pro">Flux.1 Pro</SelectItem>
-                    <SelectItem value="flux-1.1-pro">FLUX1.1 [pro] Ultra - High Res</SelectItem>
                     <SelectItem value="flux-lora">Flux LoRA</SelectItem>
                     <SelectItem value="flux-dev">Flux Dev</SelectItem>
                     <SelectItem value="flux-schnell">Flux Schnell</SelectItem>
@@ -486,28 +486,27 @@ export function ImageGenerator() {
                 </Select>
               </div>
 
-              {isFluxProUltra ? (
+              {isFluxProUltra && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Aspect Ratio</label>
+                      <label className="text-sm font-medium">Image Size</label>
                       <Select
-                        value={options.aspect_ratio}
-                        onValueChange={(value: "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21") => 
-                          setOptions({ ...options, aspect_ratio: value })
+                        value={options.image_size}
+                        onValueChange={(value: Options["image_size"]) => 
+                          setOptions({ ...options, image_size: value })
                         }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="21:9">Ultra Wide 21:9</SelectItem>
-                          <SelectItem value="16:9">Wide 16:9</SelectItem>
-                          <SelectItem value="4:3">Standard 4:3</SelectItem>
-                          <SelectItem value="1:1">Square 1:1</SelectItem>
-                          <SelectItem value="3:4">Portrait 3:4</SelectItem>
-                          <SelectItem value="9:16">Tall 9:16</SelectItem>
-                          <SelectItem value="9:21">Ultra Tall 9:21</SelectItem>
+                          <SelectItem value="square_hd">Square HD</SelectItem>
+                          <SelectItem value="square">Square</SelectItem>
+                          <SelectItem value="portrait_4_3">Portrait 4:3</SelectItem>
+                          <SelectItem value="portrait_16_9">Portrait 16:9</SelectItem>
+                          <SelectItem value="landscape_4_3">Landscape 4:3</SelectItem>
+                          <SelectItem value="landscape_16_9">Landscape 16:9</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -516,7 +515,9 @@ export function ImageGenerator() {
                       <label className="text-sm font-medium">Output Format</label>
                       <Select
                         value={options.output_format}
-                        onValueChange={(value: "jpeg" | "png") => setOptions({ ...options, output_format: value })}
+                        onValueChange={(value: "jpeg" | "png") => 
+                          setOptions({ ...options, output_format: value })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -548,395 +549,42 @@ export function ImageGenerator() {
                     </div>
                   </div>
 
-                  <div className="flex gap-6">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="raw"
-                        checked={options.raw}
-                        onCheckedChange={(checked) => setOptions({ ...options, raw: !!checked })}
-                      />
-                      <label htmlFor="raw" className="text-sm font-medium">
-                        Raw Output
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="sync_mode"
-                        checked={options.sync_mode}
-                        onCheckedChange={(checked) => setOptions(prev => ({ ...prev, sync_mode: !!checked }))}
-                      />
-                      <label htmlFor="sync_mode" className="text-sm font-medium">
-                        Sync Mode
-                      </label>
-                    </div>
-                  </div>
-                </>
-              ) : options.model === "flux-1-pro" ? (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Image Size</label>
-                      <Select
-                        value={options.image_size}
-                        onValueChange={(value) =>
-                          setOptions((prev) => ({ ...prev, image_size: value as Options["image_size"] }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select image size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="square_hd">Square HD</SelectItem>
-                          <SelectItem value="square">Square</SelectItem>
-                          <SelectItem value="portrait_4_3">Portrait 4:3</SelectItem>
-                          <SelectItem value="portrait_16_9">Portrait 16:9</SelectItem>
-                          <SelectItem value="landscape_4_3">Landscape 4:3</SelectItem>
-                          <SelectItem value="landscape_16_9">Landscape 16:9</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Output Format</label>
-                      <Select
-                        value={options.output_format}
-                        onValueChange={(value: "jpeg" | "png") => setOptions({ ...options, output_format: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="jpeg">JPEG</SelectItem>
-                          <SelectItem value="png">PNG</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Seed</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                          value={options.seed || ''}
-                          onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
-                          placeholder="Leave blank for random"
-                        />
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
-                        >
-                          Random
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Number of Images</label>
-                      <Select
-                        value={options.num_images}
-                        onValueChange={(value) => setOptions({ ...options, num_images: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1</SelectItem>
-                          <SelectItem value="2">2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <label htmlFor="inference-steps" className="text-sm font-medium">
-                      Inference Steps ({options.num_inference_steps})
-                    </label>
-                    <Slider
-                      id="inference-steps"
-                      min={1}
-                      max={50}
-                      step={1}
-                      value={[options.num_inference_steps || 28]}
-                      onValueChange={([value]) =>
-                        setOptions((prev) => ({ ...prev, num_inference_steps: value }))
-                      }
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <label htmlFor="guidance-scale" className="text-sm font-medium">
-                      Guidance Scale ({options.guidance_scale})
-                    </label>
-                    <Slider
-                      id="guidance-scale"
-                      min={1}
-                      max={20}
-                      step={0.1}
-                      value={[options.guidance_scale || 3.5]}
-                      onValueChange={([value]) =>
-                        setOptions((prev) => ({ ...prev, guidance_scale: value }))
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="sync_mode"
-                      checked={options.sync_mode}
-                      onCheckedChange={(checked) => setOptions(prev => ({ ...prev, sync_mode: !!checked }))}
-                    />
-                    <label htmlFor="sync_mode" className="text-sm font-medium">
-                      Enable Sync Mode
-                    </label>
-                  </div>
-                </>
-              ) : (
-                <>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Seed</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        value={options.seed || ''}
-                        onChange={(e) => setOptions({ ...options, seed: e.target.value ? Number(e.target.value) : undefined })}
-                        placeholder="Leave blank for random"
-                      />
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setOptions({ ...options, seed: Math.floor(Math.random() * 1000000) })}
-                      >
-                        Random
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Safety Tolerance</label>
-                      <Select
-                        value={options.safety_tolerance?.toString()}
-                        onValueChange={(value) => setOptions({ ...options, safety_tolerance: Number(value) as 1 | 2 | 3 | 4 | 5 | 6 })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 - Very Strict</SelectItem>
-                          <SelectItem value="2">2 - Strict</SelectItem>
-                          <SelectItem value="3">3 - Moderate</SelectItem>
-                          <SelectItem value="4">4 - Permissive</SelectItem>
-                          <SelectItem value="5">5 - Very Permissive</SelectItem>
-                          <SelectItem value="6">6 - Unrestricted</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Output Format</label>
-                      <Select
-                        value={options.output_format}
-                        onValueChange={(value: "jpeg" | "png") => setOptions({ ...options, output_format: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="jpeg">JPEG</SelectItem>
-                          <SelectItem value="png">PNG</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-6">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="raw"
-                        checked={options.raw}
-                        onCheckedChange={(checked) => setOptions({ ...options, raw: !!checked })}
-                      />
-                      <label htmlFor="raw" className="text-sm font-medium">
-                        Raw Output
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="safety"
-                        checked={options.enable_safety_checker}
-                        onCheckedChange={(checked) => setOptions(prev => ({ ...prev, enable_safety_checker: !!checked }))}
-                      />
-                      <label htmlFor="safety" className="text-sm font-medium">
-                        Enable Safety Checker
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <label className="text-sm font-medium">Number of Images</label>
-                      <span className="text-sm text-muted-foreground">{options.num_images}</span>
-                    </div>
-                    <Slider
-                      min={1}
-                      max={4}
-                      step={1}
-                      value={[parseInt(options.num_images)]}
-                      onValueChange={(value) => setOptions({ ...options, num_images: String(value[0]) })}
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Image Input (Optional)</label>
-                    {uploadedImage ? (
-                      <div className="relative">
-                        <Image
-                          src={uploadedImage}
-                          alt="Uploaded image"
-                          width={300}
-                          height={300}
-                          className="rounded-lg"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={handleRemoveImage}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <div className="mt-2 space-y-2">
-                          <label className="text-sm font-medium">Image Prompt Strength</label>
-                          <div className="flex items-center gap-4">
-                            <Slider
-                              min={0}
-                              max={1}
-                              step={0.05}
-                              value={[imagePromptStrength]}
-                              onValueChange={([value]) => {
-                                setImagePromptStrength(value);
-                                setOptions(prev => ({
-                                  ...prev,
-                                  image_prompt_strength: value,
-                                }));
-                              }}
-                              className="flex-1"
-                            />
-                            <span className="text-sm text-muted-foreground w-12">
-                              {imagePromptStrength.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-full">
-                        <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="h-8 w-8 mb-4 text-muted-foreground" />
-                            <p className="mb-2 text-sm text-muted-foreground">
-                              <span className="font-semibold">Click to upload</span> or drag and drop
-                            </p>
-                            <p className="text-xs text-muted-foreground">PNG, JPG or JPEG</p>
-                          </div>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/png,image/jpeg,image/jpg"
-                            onChange={handleImageUpload}
-                          />
-                        </label>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="sync_mode"
-                      checked={options.sync_mode}
-                      onCheckedChange={(checked) => setOptions(prev => ({ ...prev, sync_mode: !!checked }))}
-                    />
-                    <label htmlFor="sync_mode" className="text-sm font-medium">
-                      Enable Sync Mode
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        (Faster generation, but may be less reliable)
-                      </span>
-                    </label>
+                    <label className="text-sm font-medium">Number of Images</label>
+                    <Select
+                      value={options.num_images.toString()}
+                      onValueChange={(value) => 
+                        setOptions({ ...options, num_images: parseInt(value) })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="2">2</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="4">4</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </>
               )}
             </div>
 
-            {!isFluxProUltra && options.model !== "flux-1-pro" && (
-              <>
-                <div className="grid gap-2">
-                  <label htmlFor="image-size" className="text-sm font-medium">
-                    Image Size
-                  </label>
-                  <Select
-                    value={options.image_size}
-                    onValueChange={(value) =>
-                      setOptions((prev) => ({ ...prev, image_size: value as Options["image_size"] }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select image size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="square_hd">Square HD</SelectItem>
-                      <SelectItem value="square">Square</SelectItem>
-                      <SelectItem value="portrait_4_3">Portrait 4:3</SelectItem>
-                      <SelectItem value="portrait_16_9">Portrait 16:9</SelectItem>
-                      <SelectItem value="landscape_4_3">Landscape 4:3</SelectItem>
-                      <SelectItem value="landscape_16_9">Landscape 16:9</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <label htmlFor="inference-steps" className="text-sm font-medium">
-                    Inference Steps ({options.num_inference_steps})
-                  </label>
-                  <Slider
-                    id="inference-steps"
-                    min={1}
-                    max={50}
-                    step={1}
-                    value={[options.num_inference_steps || 28]}
-                    onValueChange={([value]) =>
-                      setOptions((prev) => ({ ...prev, num_inference_steps: value }))
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <label htmlFor="guidance-scale" className="text-sm font-medium">
-                    Guidance Scale ({options.guidance_scale})
-                  </label>
-                  <Slider
-                    id="guidance-scale"
-                    min={1}
-                    max={20}
-                    step={0.1}
-                    value={[options.guidance_scale || 3.5]}
-                    onValueChange={([value]) =>
-                      setOptions((prev) => ({ ...prev, guidance_scale: value }))
-                    }
-                  />
-                </div>
-              </>
+            {isFluxProUltra ? (
+              <ImageGeneratorButton 
+                isLoading={isLoading} 
+                onGenerate={handleGenerate} 
+                shortcutText="⌘ + Enter"
+              />
+            ) : (
+              <ImageGeneratorButton 
+                isLoading={isLoading} 
+                onGenerate={handleGenerate} 
+                shortcutText="⌘ + Enter"
+              />
             )}
-
-            <ImageGeneratorButton 
-              isLoading={isLoading} 
-              onGenerate={handleGenerate} 
-              shortcutText="⌘ + Enter"
-            />
 
             {error && (
               <Alert variant="destructive">
