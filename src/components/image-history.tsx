@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { ScrollArea as ScrollAreaPrimitive } from "./ui/scroll-area";
+import { useHistory } from "@/context/history-context"
 
 interface HistoryItem {
   id: string;
@@ -81,6 +82,7 @@ export function ImageHistory() {
   const [selectedImage, setSelectedImage] = useState<HistoryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const { refreshKey } = useHistory();
 
   useEffect(() => {
     try {
@@ -94,7 +96,7 @@ export function ImageHistory() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshKey]);
 
   const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

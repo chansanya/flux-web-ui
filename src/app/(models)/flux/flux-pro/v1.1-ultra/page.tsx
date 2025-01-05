@@ -3,6 +3,12 @@
 import React, { useEffect, useState } from 'react'
 import { fal } from "@fal-ai/client";
 import { v4 as uuidv4 } from 'uuid';
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useHistory } from "@/context/history-context"
 
 interface ImageResult {
   url: string;
@@ -31,6 +37,7 @@ const Page = () => {
   const [generatedImage, setGeneratedImage] = useState<ImageResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const { refreshHistory } = useHistory();
 
   useEffect(() => {
     const apiKey = localStorage.getItem("fal_api_key");
@@ -95,6 +102,8 @@ const Page = () => {
         const existingHistory = JSON.parse(localStorage.getItem("imageHistory") || "[]");
         const updatedHistory = [historyItem, ...existingHistory];
         localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
+        
+        refreshHistory();
       }
     } catch (error) {
       console.error("Error generating image:", error);
@@ -112,7 +121,7 @@ const Page = () => {
     raw: false,
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setInputState(prev => ({
       ...prev,
@@ -123,87 +132,106 @@ const Page = () => {
   return (
     <div className="p-4 container mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-2">Prompt:</label>
-            <input
-              type="text"
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="prompt">Prompt</Label>
+            <Textarea
+              id="prompt"
               name="prompt"
               value={inputState.prompt}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+              placeholder="Enter your prompt here..."
+              className="min-h-[100px] resize-none"
             />
           </div>
 
-          <div>
-            <label className="block mb-2">Seed (optional):</label>
-            <input
+          <div className="w-1/3">
+            <Label htmlFor="seed">Seed (optional)</Label>
+            <Input
+              id="seed"
               type="number"
               name="seed"
               value={inputState.seed}
               onChange={handleInputChange}
-              className="w-full p-2 border rounded"
+              className="w-full"
             />
           </div>
 
-          <div>
-            <label className="block mb-2">Safety Tolerance (1-10):</label>
-            <input
-              type="number"
-              name="safety_tolerance"
-              min="1"
-              max="10"
-              value={inputState.safety_tolerance}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="safety_tolerance">Safety Tolerance</Label>
+              <Input
+                id="safety_tolerance"
+                type="number"
+                name="safety_tolerance"
+                min="1"
+                max="10"
+                value={inputState.safety_tolerance}
+                onChange={handleInputChange}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="aspect_ratio">Aspect Ratio</Label>
+              <Select 
+                name="aspect_ratio" 
+                value={inputState.aspect_ratio}
+                onValueChange={(value) => 
+                  handleInputChange({ 
+                    target: { name: 'aspect_ratio', value } 
+                  } as any)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select aspect ratio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="21:9">21:9</SelectItem>
+                  <SelectItem value="16:9">16:9</SelectItem>
+                  <SelectItem value="4:3">4:3</SelectItem>
+                  <SelectItem value="1:1">1:1</SelectItem>
+                  <SelectItem value="3:4">3:4</SelectItem>
+                  <SelectItem value="9:16">9:16</SelectItem>
+                  <SelectItem value="9:21">9:21</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div>
-            <label className="block mb-2">Aspect Ratio:</label>
-            <select
-              name="aspect_ratio"
-              value={inputState.aspect_ratio}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="21:9">21:9</option>
-              <option value="16:9">16:9</option>
-              <option value="4:3">4:3</option>
-              <option value="1:1">1:1</option>
-              <option value="3:4">3:4</option>
-              <option value="9:16">9:16</option>
-              <option value="9:21">9:21</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+          <div className="flex space-x-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="enable_safety_checker"
                 name="enable_safety_checker"
                 checked={inputState.enable_safety_checker}
-                onChange={handleInputChange}
+                onCheckedChange={(checked) =>
+                  handleInputChange({
+                    target: { name: 'enable_safety_checker', type: 'checkbox', checked }
+                  } as any)
+                }
               />
-              Enable Safety Checker
-            </label>
-          </div>
+              <Label htmlFor="enable_safety_checker">Enable Safety Checker</Label>
+            </div>
 
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="raw"
                 name="raw"
                 checked={inputState.raw}
-                onChange={handleInputChange}
+                onCheckedChange={(checked) =>
+                  handleInputChange({
+                    target: { name: 'raw', type: 'checkbox', checked }
+                  } as any)
+                }
               />
-              Raw Output
-            </label>
+              <Label htmlFor="raw">Raw Output</Label>
+            </div>
           </div>
 
           <button
             onClick={generateImage}
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition-colors"
           >
             Generate Image
           </button>

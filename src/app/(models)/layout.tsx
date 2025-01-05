@@ -1,13 +1,14 @@
 import { ApiKeyForm } from "@/components/api-key-form"
 import { ImageHistory } from "@/components/image-history"
-
+import { HistoryProvider } from "@/context/history-context"
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div>
-    {children}
+    <HistoryProvider>
+      <div className="container mx-auto mt-24">
+        {children}
 
-    <section>
+        <section>
           <div className="min-h-[600px] max-w-7xl mx-auto">
             <ImageHistory />
           </div>
@@ -17,9 +18,8 @@ const layout = ({ children }: { children: React.ReactNode }) => {
           <h2 className="text-2xl font-semibold mb-6">Settings</h2>
           <ApiKeyForm />
         </section>
-
-      
-    </div>
+      </div>
+    </HistoryProvider>
   )
 }
 
