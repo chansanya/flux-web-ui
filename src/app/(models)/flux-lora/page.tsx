@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useHistory } from "@/context/history-context"
+import { Slider } from "@/components/ui/slider"
 
 interface ImageResult {
   url: string;
@@ -46,6 +47,8 @@ interface HistoryItem {
   responseDetails: Record<string, unknown>;
   logs?: string;
 }
+
+type ImageSize = "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9";
 
 const Page = () => {
   const [generatedImage, setGeneratedImage] = useState<ImageResult | null>(null);
@@ -113,7 +116,12 @@ const Page = () => {
               loras: inputState.loras.length > 0 ? inputState.loras : undefined,
             }
           },
-          responseDetails: result.data,
+          responseDetails: {
+            ...result.data,
+            usedSeed: result.data.seed,
+            hasNsfwConcepts: result.data.has_nsfw_concepts,
+            timings: result.data.timings
+          },
           logs: logs.join('\n')
         };
 
@@ -132,7 +140,7 @@ const Page = () => {
 
   const [inputState, setInputState] = useState({
     prompt: "",
-    image_size: "landscape_4_3",
+    image_size: "landscape_4_3" as ImageSize,
     num_inference_steps: 28,
     seed: "",
     guidance_scale: 3.5,
@@ -227,15 +235,22 @@ const Page = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="num_inference_steps">Inference Steps</Label>
-              <Input
+              <div className="flex justify-between">
+                <Label htmlFor="num_inference_steps">Inference Steps</Label>
+                <span className="text-sm text-gray-500">{inputState.num_inference_steps}</span>
+              </div>
+              <Slider
                 id="num_inference_steps"
-                type="number"
                 name="num_inference_steps"
-                value={inputState.num_inference_steps}
-                onChange={handleInputChange}
-                min="1"
-                max="100"
+                value={[inputState.num_inference_steps]}
+                onValueChange={(value) => 
+                  handleInputChange({
+                    target: { name: 'num_inference_steps', value: value[0] }
+                  } as any)
+                }
+                min={1}
+                max={40}
+                step={1}
                 className="w-full"
               />
             </div>
@@ -255,16 +270,22 @@ const Page = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="guidance_scale">Guidance Scale</Label>
-              <Input
+              <div className="flex justify-between">
+                <Label htmlFor="guidance_scale">Guidance Scale</Label>
+                <span className="text-sm text-gray-500">{inputState.guidance_scale.toFixed(1)}</span>
+              </div>
+              <Slider
                 id="guidance_scale"
-                type="number"
                 name="guidance_scale"
-                value={inputState.guidance_scale}
-                onChange={handleInputChange}
-                step="0.1"
-                min="1"
-                max="20"
+                value={[inputState.guidance_scale]}
+                onValueChange={(value) => 
+                  handleInputChange({
+                    target: { name: 'guidance_scale', value: value[0] }
+                  } as any)
+                }
+                min={0}
+                max={10}
+                step={0.1}
                 className="w-full"
               />
             </div>
@@ -319,15 +340,17 @@ const Page = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor={`lora-scale-${index}`}>Scale</Label>
-                  <Input
+                  <div className="flex justify-between">
+                    <Label htmlFor={`lora-scale-${index}`}>Scale</Label>
+                    <span className="text-sm text-gray-500">{lora.scale.toFixed(1)}</span>
+                  </div>
+                  <Slider
                     id={`lora-scale-${index}`}
-                    type="number"
-                    value={lora.scale}
-                    onChange={(e) => handleLoraChange(index, 'scale', e.target.value)}
-                    step="0.1"
-                    min="0"
-                    max="2"
+                    value={[lora.scale]}
+                    onValueChange={(value) => handleLoraChange(index, 'scale', value[0].toString())}
+                    min={0}
+                    max={4}
+                    step={0.1}
                     className="w-full"
                   />
                 </div>
