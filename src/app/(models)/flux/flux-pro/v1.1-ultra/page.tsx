@@ -133,6 +133,10 @@ const Page = () => {
     <div className="p-4 container mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6">
+          <h1 className="text-2xl font-bold tracking-tight">
+            FLUX1.1 <span className="text-blue-600">[pro]</span> (Ultra)
+          </h1>
+
           <div className="space-y-2">
             <Label htmlFor="prompt">Prompt</Label>
             <Textarea
@@ -180,7 +184,7 @@ const Page = () => {
                 onValueChange={(value) => 
                   handleInputChange({ 
                     target: { name: 'aspect_ratio', value } 
-                  } as any)
+                  } as React.ChangeEvent<HTMLSelectElement>)
                 }
               >
                 <SelectTrigger>

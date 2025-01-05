@@ -21,12 +21,17 @@ export default function Home() {
               flux 1.1 pro ultra
             </Link>
           </Button>
+          <Button asChild className="mt-4 mr-4 ml-4" >
+            <Link href="/flux/flux-pro/v1.1-ultra/redux">
+              flux 1.1 pro ultra(redux)
+            </Link>
+          </Button>
         </section>
 
         <section>
           <h2 className="text-2xl font-semibold mb-6">Generated Images</h2>
           <div className="min-h-[600px]">
-            <ImageHistory />
+            {/* <ImageHistory /> */}
           </div>
         </section>
 
