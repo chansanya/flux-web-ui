@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useHistory } from "@/context/history-context"
+import { Slider } from "@/components/ui/slider"
+import { Card } from "@/components/ui/card"
 
 interface ImageResult {
   url: string;
@@ -190,22 +192,76 @@ const Page = () => {
 
           <div className="space-y-2">
             <Label htmlFor="image-upload">Upload Image (optional)</Label>
-            <Input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="w-full"
-            />
-            {uploadedImage && (
-              <div className="mt-2">
-                <img 
-                  src={uploadedImage} 
-                  alt="Uploaded preview" 
-                  className="max-w-[200px] h-auto rounded-lg"
-                />
+            <Card className="border-2 border-dashed border-gray-200 rounded-lg p-3">
+              <div className="flex flex-col items-center justify-center gap-2">
+                {!uploadedImage ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-5 h-5 text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="w-full text-sm cursor-pointer"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2 w-full">
+                    <div className="flex items-start gap-4">
+                      <img 
+                        src={uploadedImage} 
+                        alt="Uploaded preview" 
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="image_prompt_strength">Strength</Label>
+                          <span className="text-sm text-gray-500">
+                            {inputState.image_prompt_strength}
+                          </span>
+                        </div>
+                        <Slider
+                          id="image_prompt_strength"
+                          min={0}
+                          max={1}
+                          step={0.1}
+                          value={[inputState.image_prompt_strength]}
+                          onValueChange={(value) => {
+                            handleInputChange({
+                              target: { name: 'image_prompt_strength', value: value[0] }
+                            } as any);
+                          }}
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          setUploadedImage(null);
+                          setUploadedImageUrl(null);
+                        }}
+                        className="text-sm text-red-500 hover:text-red-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </Card>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -252,46 +308,44 @@ const Page = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="image_prompt_strength">Image Prompt Strength</Label>
-              <Input
-                id="image_prompt_strength"
-                type="number"
-                name="image_prompt_strength"
-                min="0"
-                max="1"
-                step="0.1"
-                value={inputState.image_prompt_strength}
-                onChange={handleInputChange}
-                className="w-full"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="num_inference_steps">Inference Steps</Label>
-              <Input
+              <div className="flex justify-between">
+                <Label htmlFor="num_inference_steps">Inference Steps</Label>
+                <span className="text-sm text-gray-500">
+                  {inputState.num_inference_steps}
+                </span>
+              </div>
+              <Slider
                 id="num_inference_steps"
-                type="number"
-                name="num_inference_steps"
-                min="1"
-                max="100"
-                value={inputState.num_inference_steps}
-                onChange={handleInputChange}
-                className="w-full"
+                min={1}
+                max={40}
+                step={1}
+                value={[inputState.num_inference_steps]}
+                onValueChange={(value) => {
+                  handleInputChange({
+                    target: { name: 'num_inference_steps', value: value[0] }
+                  } as any);
+                }}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="guidance_scale">Guidance Scale</Label>
-              <Input
+              <div className="flex justify-between">
+                <Label htmlFor="guidance_scale">Guidance Scale</Label>
+                <span className="text-sm text-gray-500">
+                  {inputState.guidance_scale}
+                </span>
+              </div>
+              <Slider
                 id="guidance_scale"
-                type="number"
-                name="guidance_scale"
-                min="1"
-                max="20"
-                step="0.1"
-                value={inputState.guidance_scale}
-                onChange={handleInputChange}
-                className="w-full"
+                min={0}
+                max={10}
+                step={0.1}
+                value={[inputState.guidance_scale]}
+                onValueChange={(value) => {
+                  handleInputChange({
+                    target: { name: 'guidance_scale', value: value[0] }
+                  } as any);
+                }}
               />
             </div>
           </div>
