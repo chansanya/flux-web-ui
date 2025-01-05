@@ -65,7 +65,7 @@ const Page = () => {
           enable_safety_checker: inputState.enable_safety_checker,
           aspect_ratio: inputState.aspect_ratio as "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21" | undefined,
           raw: inputState.raw,
-          image_url: uploadedImageUrl || undefined,
+          image_url: uploadedImageUrl || Blob || undefined,
           image_prompt_strength: inputState.image_prompt_strength,
           num_inference_steps: inputState.num_inference_steps,
           guidance_scale: inputState.guidance_scale,
