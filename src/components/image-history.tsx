@@ -206,23 +206,31 @@ function ImageCard({
           className="aspect-square relative rounded-md overflow-hidden cursor-zoom-in"
           onClick={onImageClick}
         >
+          <div 
+            className="absolute inset-0 bg-cover bg-center blur-md backdrop-blur-sm opacity-50 scale-110"
+            style={{ backgroundImage: `url(${item.imageUrl})` }}
+          />
+          
           {imageLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="absolute inset-0 flex items-center justify-center bg-muted border ">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           )}
-          <Image
-            src={item.imageUrl}
-            alt={item.prompt}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw"
-            className={cn(
-              "object-cover transition-all duration-300 group-hover:scale-105",
-              imageLoading ? "opacity-0" : "opacity-100"
-            )}
-            onLoadingComplete={() => setImageLoading(false)}
-            priority={false}
-          />
+
+          <div className="absolute inset-0 flex items-center justify-center ">
+            <Image
+              src={item.imageUrl}
+              alt={item.prompt}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw"
+              className={cn(
+                "object-contain transition-all duration-300  group-hover:scale-105 ",
+                imageLoading ? "opacity-0" : "opacity-100"
+              )}
+              onLoadingComplete={() => setImageLoading(false)}
+              priority={false}
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium line-clamp-2 leading-snug">

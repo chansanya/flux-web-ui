@@ -29,10 +29,17 @@ export function Lightbox({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] h-[90vh] p-0">
+      <DialogContent className="max-w-[90vw] h-[90vh] p-0 bg-background/80 backdrop-blur-xl">
         <VisuallyHidden asChild>
           <DialogTitle>Image Preview</DialogTitle>
         </VisuallyHidden>
+
+        {/* Background blur */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-110"
+          style={{ backgroundImage: `url(${imageUrl})` }}
+        />
+
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-50"
@@ -71,7 +78,7 @@ export function Lightbox({
           </Button>
         )}
 
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center z-10">
           <Image
             src={imageUrl}
             alt="Enlarged view"
