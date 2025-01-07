@@ -1,6 +1,9 @@
 import "./globals.css";
 import { fal } from "@fal-ai/client";
 import { Metadata } from "next";
+import { Toaster } from "@/components/ui/toaster";
+import { HistoryProvider } from "@/context/history-context";
+import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
   title: "Simple FAL.AI API Key Studio",
@@ -35,7 +38,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <HistoryProvider>
+          <Navbar />
+          {children}
+          <Toaster />
+        </HistoryProvider>
       </body>
     </html>
   );

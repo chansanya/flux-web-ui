@@ -70,3 +70,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Interactive elements cursor styles */
+button, a, [role="button"], select, summary, 
+[type="button"], [type="reset"], [type="submit"], 
+[type="checkbox"], [type="radio"] {
+  cursor: pointer;
+}

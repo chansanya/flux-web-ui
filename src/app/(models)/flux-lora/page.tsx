@@ -10,12 +10,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useHistory } from "@/context/history-context"
 import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/hooks/use-toast"
 
 interface ImageResult {
   url: string;
   content_type?: string | null;
-  width?: number;
-  height?: number;
+  width: number | null | undefined;
+  height: number | null | undefined;
 }
 
 interface LoraWeight {
@@ -55,18 +56,42 @@ const Page = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const { refreshHistory } = useHistory();
+  const { toast } = useToast();
 
   useEffect(() => {
     const apiKey = localStorage.getItem("fal_api_key");
     if (apiKey) {
-      fal.config({
-        credentials: apiKey
+      try {
+        fal.config({
+          credentials: apiKey
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to configure API key",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Warning",
+        description: "No API key found. Please add your FAL.AI API key in settings.",
+        variant: "destructive",
       });
     }
-  }, []);
+  }, [toast]);
 
   const generateImage = async () => {
     try {
+      if (!inputState.prompt.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter a prompt",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsGenerating(true);
       setLogs([]);
       
@@ -93,7 +118,7 @@ const Page = () => {
       
       if (result.data.images?.[0]) {
         const generatedImg = result.data.images[0];
-        setGeneratedImage(generatedImg);
+        setGeneratedImage(generatedImg as ImageResult);
         
         const historyItem: HistoryItem = {
           id: uuidv4(),
@@ -130,9 +155,19 @@ const Page = () => {
         localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
         
         refreshHistory();
+
+        toast({
+          title: "Success",
+          description: "Image generated successfully!",
+        });
       }
     } catch (error) {
       console.error("Error generating image:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate image",
+        variant: "destructive",
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -145,7 +180,7 @@ const Page = () => {
     seed: "",
     guidance_scale: 3.5,
     enable_safety_checker: true,
-    output_format: "jpeg",
+    output_format: "jpeg" as "jpeg" | "png",
     loras: [] as LoraWeight[],
   });
 
@@ -249,7 +284,7 @@ const Page = () => {
                   } as any)
                 }
                 min={1}
-                max={40}
+                max={50}
                 step={1}
                 className="w-full"
               />
