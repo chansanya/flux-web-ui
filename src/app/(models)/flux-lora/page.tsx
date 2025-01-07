@@ -55,7 +55,7 @@ const Page = () => {
   const [generatedImage, setGeneratedImage] = useState<ImageResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-  const { refreshHistory } = useHistory();
+  const { refreshHistory, remixedImage } = useHistory();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,6 +80,23 @@ const Page = () => {
       });
     }
   }, [toast]);
+
+  useEffect(() => {
+    if (remixedImage) {
+      setGeneratedImage({ url: remixedImage.imageUrl } as ImageResult);
+      setInputState(prev => ({
+        ...prev,
+        prompt: remixedImage.prompt,
+        seed: remixedImage.requestDetails.options?.seed?.toString() || "",
+        num_inference_steps: remixedImage.requestDetails.options?.numInferenceSteps || 28,
+        guidance_scale: remixedImage.requestDetails.options?.guidanceScale || 3.5,
+        enable_safety_checker: remixedImage.requestDetails.options?.enableSafetyChecker || false,
+        output_format: remixedImage.requestDetails.options?.outputFormat || "jpeg",
+        loras: remixedImage.requestDetails.options?.loras || [],
+        image_size: remixedImage.requestDetails.imageSize || "landscape_4_3"
+      }));
+    }
+  }, [remixedImage]);
 
   const generateImage = async () => {
     try {
@@ -239,7 +256,7 @@ const Page = () => {
               value={inputState.prompt}
               onChange={handleInputChange}
               placeholder="Enter your prompt here..."
-              className="min-h-[100px] resize-none"
+              className="min-h-[100px]"
             />
           </div>
 

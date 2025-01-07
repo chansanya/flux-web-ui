@@ -91,7 +91,7 @@ export function ImageHistory() {
   const [selectedImage, setSelectedImage] = useState<HistoryItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const { refreshKey, refreshHistory } = useHistory();
+  const { refreshKey, refreshHistory, remixImage } = useHistory();
 
   useEffect(() => {
     const loadHistory = () => {
@@ -196,6 +196,7 @@ export function ImageHistory() {
             onImageClick={() => handleImageClick(item.imageUrl, index)}
             onDetailsClick={() => setSelectedImage(item)}
             onDelete={handleDelete}
+            onRemix={(item) => remixImage(item)}
           />
         ))}
       </div>
@@ -228,30 +229,35 @@ function ImageCard({
   item, 
   onImageClick, 
   onDetailsClick,
-  onDelete
+  onDelete,
+  onRemix
 }: { 
   item: HistoryItem; 
   onImageClick: () => void;
   onDetailsClick: () => void;
   onDelete: (id: string) => void;
+  onRemix: (item: HistoryItem) => void;
 }) {
   const [imageLoading, setImageLoading] = useState(true);
 
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-white/50 dark:bg-gray-900/50 border-0 ring-1 ring-black/5">
-      <div className="space-y-4">
+    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg bg-gradient-to-b from-background to-muted/20 dark:from-background dark:to-muted/10 border-0 ring-1 ring-black/5">
+      <div className="space-y-3 p-2">
         <div 
-          className="aspect-square relative rounded-lg overflow-hidden cursor-zoom-in ring-1 ring-black/10"
+          className="relative aspect-square rounded-lg overflow-hidden cursor-zoom-in ring-1 ring-black/10 group-hover:ring-primary/20 transition-all duration-300"
           onClick={onImageClick}
         >
           <div 
-            className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-30 transition-opacity duration-300 group-hover:opacity-40"
+            className="absolute inset-0 bg-cover bg-center blur-xl scale-110 opacity-30 transition-opacity duration-300 group-hover:opacity-40"
             style={{ backgroundImage: `url(${item.imageUrl})` }}
           />
           
           {imageLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/50 backdrop-blur-sm">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary relative z-10" />
+              </div>
             </div>
           )}
 
@@ -262,7 +268,7 @@ function ImageCard({
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw"
               className={cn(
-                "object-contain transition-all duration-500 group-hover:scale-105",
+                "object-contain transition-all duration-500",
                 imageLoading ? "opacity-0" : "opacity-100"
               )}
               onLoadingComplete={() => setImageLoading(false)}
@@ -270,40 +276,66 @@ function ImageCard({
             />
           </div>
         </div>
-        <div className="space-y-3">
-          <p className="text-sm font-medium line-clamp-2 leading-snug hover:line-clamp-none transition-all duration-300">
-            {item.prompt}
-          </p>
-          <div className="flex items-center justify-between text-xs">
-            <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full font-medium">
-              {item.model}
-            </span>
-            <span className="text-green-600 dark:text-green-400 font-medium px-2.5 py-1 bg-green-50 dark:bg-green-900/20 rounded-full">
-              ${item.cost.toFixed(4)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center pt-2 border-t">
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-              </p>
+
+        <div className="space-y-3 px-2">
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium leading-snug">
+              <span className="line-clamp-2">
+                {item.prompt}
+              </span>
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                {item.model}
+              </span>
+              <span className="text-green-600 dark:text-green-400 text-xs font-medium px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded-full">
+                ${item.cost.toFixed(4)}
+              </span>
               {item.requestDetails?.options?.seed && (
-                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-muted px-2 py-0.5 rounded-full font-medium text-muted-foreground">
                   Seed: {item.requestDetails.options.seed}
                 </span>
               )}
             </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-2 border-t border-border/50">
+            <p className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+            </p>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemix(item)}
+                className="h-8 px-2 hover:bg-primary/10 hover:text-primary transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  className="h-3.5 w-3.5 mr-1"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span className="text-xs">Remix</span>
+              </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="sm"
                     onClick={onDetailsClick}
-                    className="hover:bg-primary/10 hover:text-primary transition-colors"
+                    className="h-8 px-2 hover:bg-primary/10 hover:text-primary transition-colors"
                   >
-                    <InfoIcon className="h-4 w-4 mr-1.5" />
-                    Details
+                    <InfoIcon className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-xs">Details</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl">
@@ -352,9 +384,9 @@ function ImageCard({
                   e.stopPropagation();
                   onDelete(item.id);
                 }}
-                className="hover:bg-destructive/10 hover:text-destructive transition-colors"
+                className="h-8 px-2 hover:bg-destructive/10 hover:text-destructive transition-colors group/delete"
               >
-                <Trash2Icon className="h-4 w-4" />
+                <Trash2Icon className="h-3.5 w-3.5 transition-transform group-hover/delete:scale-110" />
                 <span className="sr-only">Delete image</span>
               </Button>
             </div>
