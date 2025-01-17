@@ -1,12 +1,13 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X, Download } from "lucide-react";
-import Image from "next/image";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { Button } from "./button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ChevronLeft, ChevronRight, Download, X, Trash2 } from "lucide-react";
 
-interface LightboxProps {
+export interface LightboxProps {
+  children?: React.ReactNode;
   isOpen: boolean;
   onClose: () => void;
   imageUrl: string;
@@ -15,127 +16,121 @@ interface LightboxProps {
   hasNext?: boolean;
   hasPrevious?: boolean;
   onDownload?: () => void;
-  children?: React.ReactNode;
+  onDelete?: () => void;
   isNSFW?: boolean;
   onNSFWToggle?: (isNSFW: boolean) => void;
 }
 
-export function Lightbox({ 
-  isOpen, 
-  onClose, 
+export function Lightbox({
+  children,
+  isOpen,
+  onClose,
   imageUrl,
   onNext,
   onPrevious,
   hasNext,
   hasPrevious,
   onDownload,
-  children,
+  onDelete,
   isNSFW,
-  onNSFWToggle
+  onNSFWToggle,
 }: LightboxProps) {
-  if (!imageUrl) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] h-[90vh] p-0 bg-background/80 backdrop-blur-xl">
-        <VisuallyHidden asChild>
-          <DialogTitle>Image Preview</DialogTitle>
-        </VisuallyHidden>
+    <Dialog open={isOpen} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-screen-lg w-full h-[90vh] p-0 gap-0">
+        <div className="relative h-full flex flex-col">
+          {/* Top Bar */}
+          <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 bg-gradient-to-b from-black/50 to-transparent">
+            <div className="flex items-center gap-4">
+              {onNSFWToggle && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="nsfw"
+                    checked={isNSFW}
+                    onCheckedChange={onNSFWToggle}
+                  />
+                  <Label htmlFor="nsfw" className="text-white">NSFW</Label>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {onDownload && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white"
+                  onClick={onDownload}
+                >
+                  <Download className="h-4 w-4" />
+                  <span className="sr-only">Download image</span>
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 bg-black/20 hover:bg-red-500/40 backdrop-blur-[2px] text-white"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Delete image</span>
+                </Button>
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close lightbox</span>
+              </Button>
+            </div>
+          </div>
 
-        {/* Background blur */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-110"
-          style={{ backgroundImage: `url(${imageUrl})` }}
-        />
+          {/* Main Content */}
+          <div className="flex-1 overflow-auto">
+            <div className="relative h-full">
+              <img
+                src={imageUrl}
+                alt="Lightbox image"
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+              
+              {/* Navigation Buttons */}
+              <div className="absolute inset-0 flex items-center justify-between p-4">
+                {hasPrevious && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white"
+                    onClick={onPrevious}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="sr-only">Previous image</span>
+                  </Button>
+                )}
+                {hasNext && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white ml-auto"
+                    onClick={onNext}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                    <span className="sr-only">Next image</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
 
-        <div className="absolute right-4 top-4 flex items-center gap-2 z-50">
-          {onNSFWToggle && (
-            <Button
-              variant={isNSFW ? "destructive" : "outline"}
-              size="sm"
-              className="bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-              onClick={() => onNSFWToggle(!isNSFW)}
-            >
-              {isNSFW ? "Mark Safe" : "Mark NSFW"}
-            </Button>
-          )}
-          {onDownload && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-              onClick={onDownload}
-            >
-              <Download className="h-4 w-4" />
-              <span className="sr-only">Download image</span>
-            </Button>
-          )}
-          <button
-            onClick={onClose}
-            className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </button>
-        </div>
-
-        <div className="relative w-full h-full flex md:flex-row flex-col z-10">
-          {/* Details Panel */}
+          {/* Bottom Info Panel */}
           {children && (
-            <div className="md:w-80 w-full shrink-0 p-6 bg-background/95 backdrop-blur-sm md:h-full overflow-y-auto">
+            <div className="bg-background border-t p-4">
               {children}
             </div>
           )}
-
-          {/* Image Container */}
-          <div className="flex-1 relative flex items-center justify-center min-h-0 p-4">
-            <div className="relative w-full h-full">
-              <Image
-                src={imageUrl}
-                alt="Enlarged view"
-                fill
-                className="object-contain"
-                quality={100}
-                priority
-                sizes="(min-width: 768px) 60vw, 90vw"
-                onError={(e) => {
-                  console.error('Failed to load image:', imageUrl);
-                  onClose();
-                }}
-              />
-
-              {/* Navigation Buttons */}
-              {hasPrevious && onPrevious && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90 backdrop-blur-sm z-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPrevious();
-                  }}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span className="sr-only">Previous image</span>
-                </Button>
-              )}
-
-              {hasNext && onNext && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90 backdrop-blur-sm z-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNext();
-                  }}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="sr-only">Next image</span>
-                </Button>
-              )}
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

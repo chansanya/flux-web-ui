@@ -9,7 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download } from "lucide-react";
+import { Download, Search, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { flux_1_1_pro, flux_1_1_pro_ultra } from "@/lib/models/flux/text-to-text";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedModels, setSelectedModels] = useState<string[]>(AVAILABLE_MODELS.map(m => m.id));
   const [nsfwFilter, setNsfwFilter] = useState<NSFWFilter>("blur");
+  const [searchQuery, setSearchQuery] = useState("");
   const [localGenerations, setLocalGenerations] = useState<Generation[]>(generations);
 
   // Update localGenerations when props change
@@ -74,12 +76,16 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
 
   const sortedAndFilteredGenerations = [...localGenerations]
     .sort((a, b) => b.timestamp - a.timestamp)
-    .filter(gen => selectedModels.includes(gen.modelId));
+    .filter(gen => selectedModels.includes(gen.modelId))
+    .filter(gen => 
+      searchQuery === "" || 
+      gen.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const handleNSFWToggle = (isNSFW: boolean) => {
     if (!selectedGeneration) return;
     
-    setLocalGenerations(prev => prev.map(gen => {
+    const updatedGenerations = localGenerations.map(gen => {
       if (gen.id === selectedGeneration.id) {
         return {
           ...gen,
@@ -90,8 +96,15 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
         };
       }
       return gen;
-    }));
+    });
 
+    // Update local state
+    setLocalGenerations(updatedGenerations);
+
+    // Persist to localStorage
+    localStorage.setItem('fal-ai-generations', JSON.stringify(updatedGenerations));
+
+    // Update selected generation state
     setSelectedGeneration(prev => prev ? {
       ...prev,
       output: {
@@ -99,6 +112,22 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
         has_nsfw_concepts: [isNSFW]
       }
     } : null);
+  };
+
+  const handleDelete = (generationId: string) => {
+    const updatedGenerations = localGenerations.filter(gen => gen.id !== generationId);
+    
+    // Update local state
+    setLocalGenerations(updatedGenerations);
+    
+    // Persist to localStorage
+    localStorage.setItem('fal-ai-generations', JSON.stringify(updatedGenerations));
+    
+    // Close lightbox if the deleted image was being viewed
+    if (selectedGeneration?.id === generationId) {
+      setSelectedGeneration(null);
+      setSelectedImageIndex(null);
+    }
   };
 
   const totalPages = Math.ceil(sortedAndFilteredGenerations.length / ITEMS_PER_PAGE);
@@ -114,6 +143,22 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
           <h2 className="text-2xl font-bold">Previous Generations</h2>
           
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Search:</span>
+              <div className="relative w-[200px]">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search prompts..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1); // Reset to first page on search
+                  }}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground">Models:</span>
               <Select
@@ -241,21 +286,35 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
                           shouldBlur ? "blur-xl" : ""
                         }`}
                       />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="absolute top-2 right-2 h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white z-10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadImage(
-                            generation.output.images[0].url,
-                            `generation-${generation.id}.png`
-                          );
-                        }}
-                      >
-                        <Download className="h-4 w-4" />
-                        <span className="sr-only">Download image</span>
-                      </Button>
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadImage(
+                              generation.output.images[0].url,
+                              `generation-${generation.id}.png`
+                            );
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                          <span className="sr-only">Download image</span>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 bg-black/20 hover:bg-red-500/40 backdrop-blur-[2px] text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(generation.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete image</span>
+                        </Button>
+                      </div>
                     </div>
                     <div className="p-3 space-y-2">
                       <div className="flex items-center gap-2">
@@ -296,6 +355,7 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
             const image = selectedGeneration.output.images[selectedImageIndex];
             downloadImage(image.url, `generation-${selectedGeneration.id}-${selectedImageIndex}.png`);
           }}
+          onDelete={() => handleDelete(selectedGeneration.id)}
           isNSFW={selectedGeneration.output.has_nsfw_concepts?.[selectedImageIndex] ?? false}
           onNSFWToggle={handleNSFWToggle}
         >
