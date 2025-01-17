@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Download } from "lucide-react";
 import Image from "next/image";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "./button";
@@ -14,6 +14,7 @@ interface LightboxProps {
   onPrevious?: () => void;
   hasNext?: boolean;
   hasPrevious?: boolean;
+  onDownload?: () => void;
   children?: React.ReactNode;
 }
 
@@ -25,6 +26,7 @@ export function Lightbox({
   onPrevious,
   hasNext,
   hasPrevious,
+  onDownload,
   children
 }: LightboxProps) {
   if (!imageUrl) return null;
@@ -42,13 +44,26 @@ export function Lightbox({
           style={{ backgroundImage: `url(${imageUrl})` }}
         />
 
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-50"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
+        <div className="absolute right-4 top-4 flex items-center gap-2 z-50">
+          {onDownload && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+              onClick={onDownload}
+            >
+              <Download className="h-4 w-4" />
+              <span className="sr-only">Download image</span>
+            </Button>
+          )}
+          <button
+            onClick={onClose}
+            className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
+        </div>
 
         <div className="relative w-full h-full flex md:flex-row flex-col z-10">
           {/* Details Panel */}

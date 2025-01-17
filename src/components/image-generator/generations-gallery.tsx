@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Download } from "lucide-react";
 
 interface GenerationsGalleryProps {
   generations: Generation[];
@@ -20,6 +21,24 @@ function truncateText(text: string, maxWords: number = 150) {
   const words = text.split(' ');
   if (words.length <= maxWords) return text;
   return words.slice(0, maxWords).join(' ') + '...';
+}
+
+async function downloadImage(url: string, filename: string) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    console.error('Failed to download image:', error);
+  }
 }
 
 export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
@@ -76,19 +95,34 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
         {paginatedGenerations.map((generation) => (
           <Card key={generation.id} className="overflow-hidden group cursor-pointer hover:ring-2 hover:ring-primary transition-all">
             <CardContent className="p-0">
-              <div 
-                onClick={() => {
-                  setSelectedGeneration(generation);
-                  setSelectedImageIndex(0);
-                }}
-                className="flex flex-col"
-              >
-                <div className="relative aspect-square">
+              <div className="flex flex-col">
+                <div 
+                  onClick={() => {
+                    setSelectedGeneration(generation);
+                    setSelectedImageIndex(0);
+                  }}
+                  className="relative aspect-square"
+                >
                   <img
                     src={generation.output.images[0].url}
                     alt={generation.prompt}
                     className="absolute inset-0 object-cover w-full h-full"
                   />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute top-2 right-2 h-8 w-8 bg-black/20 hover:bg-black/40 backdrop-blur-[2px] text-white z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadImage(
+                        generation.output.images[0].url,
+                        `generation-${generation.id}.png`
+                      );
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="sr-only">Download image</span>
+                  </Button>
                 </div>
                 <div className="p-3 space-y-2">
                   <div className="flex items-center gap-2">
@@ -128,6 +162,12 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
           }
           hasNext={selectedImageIndex < selectedGeneration.output.images.length - 1}
           hasPrevious={selectedImageIndex > 0}
+          onDownload={() => 
+            downloadImage(
+              selectedGeneration.output.images[selectedImageIndex].url,
+              `generation-${selectedGeneration.id}-${selectedImageIndex + 1}.png`
+            )
+          }
         >
           <div className="space-y-6">
             <div>
