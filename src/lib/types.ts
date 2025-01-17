@@ -12,6 +12,10 @@ export interface ModelParameter {
   required?: boolean;
   default?: unknown;
   options?: unknown[];  // For enum-like parameters
+  items?: {
+    type: string;
+    properties?: Record<string, { type: string }>;
+  };  // For array item types
   validation?: {
     min?: number;
     max?: number;

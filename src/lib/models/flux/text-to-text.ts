@@ -51,6 +51,20 @@ export const flux_1_1_pro: Model = {
     {
       key: "images",
       type: "array",
+      required: true,
+      items: {
+        type: "object",
+        properties: {
+          url: { type: "string" },
+          width: { type: "number" },
+          height: { type: "number" },
+          content_type: { type: "string" }
+        }
+      }
+    },
+    {
+      key: "timings",
+      type: "object",
       required: true
     },
     {
@@ -61,6 +75,7 @@ export const flux_1_1_pro: Model = {
     {
       key: "has_nsfw_concepts",
       type: "array",
+      items: { type: "boolean" },
       required: true
     },
     {
@@ -126,7 +141,16 @@ export const flux_1_1_pro_ultra: Model = {
     {
       key: "images",
       type: "array",
-      required: true
+      required: true,
+      items: {
+        type: "object",
+        properties: {
+          url: { type: "string" },
+          width: { type: "number" },
+          height: { type: "number" },
+          content_type: { type: "string" }
+        }
+      }
     },
     {
       key: "timings",
@@ -141,6 +165,7 @@ export const flux_1_1_pro_ultra: Model = {
     {
       key: "has_nsfw_concepts",
       type: "array",
+      items: { type: "boolean" },
       required: true
     },
     {

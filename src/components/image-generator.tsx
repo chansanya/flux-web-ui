@@ -28,8 +28,11 @@ export function ImageGenerator({ model }: ImageGeneratorProps) {
   });
 
   async function handleGenerate() {
+    console.log('🎨 Starting client-side image generation process');
+    
     const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     if (!apiKey) {
+      console.log('❌ No API key found in localStorage');
       toast({
         title: "API Key Required",
         description: "Please set your FAL.AI API key first",
@@ -38,22 +41,34 @@ export function ImageGenerator({ model }: ImageGeneratorProps) {
       return;
     }
 
+    console.log('🔄 Setting generation state...');
     setIsGenerating(true);
+    
     try {
       const allParameters = {
         ...parameters,
         prompt,
       };
       
+      console.log('📤 Sending generation request with parameters:', {
+        modelId: model.id,
+        parameters: { ...allParameters, prompt: allParameters.prompt?.substring(0, 50) + '...' }
+      });
+      
       const response = await generateImage(model, allParameters, apiKey);
       
       if (response.success) {
+        console.log('✅ Generation successful:', {
+          seed: response.seed,
+          requestId: response.requestId
+        });
         setResult(response.imageUrl);
         toast({
           title: "Image generated successfully",
           description: `Seed: ${response.seed}`,
         });
       } else {
+        console.error('❌ Generation failed:', response.error);
         toast({
           title: "Generation failed",
           description: response.error,
@@ -61,13 +76,14 @@ export function ImageGenerator({ model }: ImageGeneratorProps) {
         });
       }
     } catch (error) {
-      console.error('Generation failed:', error);
+      console.error('💥 Unexpected error during generation:', error);
       toast({
         title: "Generation failed",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
+      console.log('🏁 Finishing generation process');
       setIsGenerating(false);
     }
   }
