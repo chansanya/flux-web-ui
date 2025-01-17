@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Generation, Model } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -65,10 +65,41 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedModels, setSelectedModels] = useState<string[]>(AVAILABLE_MODELS.map(m => m.id));
   const [nsfwFilter, setNsfwFilter] = useState<NSFWFilter>("blur");
+  const [localGenerations, setLocalGenerations] = useState<Generation[]>(generations);
 
-  const sortedAndFilteredGenerations = [...generations]
+  // Update localGenerations when props change
+  useEffect(() => {
+    setLocalGenerations(generations);
+  }, [generations]);
+
+  const sortedAndFilteredGenerations = [...localGenerations]
     .sort((a, b) => b.timestamp - a.timestamp)
     .filter(gen => selectedModels.includes(gen.modelId));
+
+  const handleNSFWToggle = (isNSFW: boolean) => {
+    if (!selectedGeneration) return;
+    
+    setLocalGenerations(prev => prev.map(gen => {
+      if (gen.id === selectedGeneration.id) {
+        return {
+          ...gen,
+          output: {
+            ...gen.output,
+            has_nsfw_concepts: [isNSFW]
+          }
+        };
+      }
+      return gen;
+    }));
+
+    setSelectedGeneration(prev => prev ? {
+      ...prev,
+      output: {
+        ...prev.output,
+        has_nsfw_concepts: [isNSFW]
+      }
+    } : null);
+  };
 
   const totalPages = Math.ceil(sortedAndFilteredGenerations.length / ITEMS_PER_PAGE);
   const paginatedGenerations = sortedAndFilteredGenerations.slice(
@@ -249,62 +280,41 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
         <Lightbox
           isOpen={true}
           onClose={() => {
-            setSelectedGeneration(null);
             setSelectedImageIndex(null);
+            setSelectedGeneration(null);
           }}
           imageUrl={selectedGeneration.output.images[selectedImageIndex].url}
-          onNext={
-            selectedImageIndex < selectedGeneration.output.images.length - 1
-              ? () => setSelectedImageIndex(selectedImageIndex + 1)
-              : undefined
-          }
-          onPrevious={
-            selectedImageIndex > 0
-              ? () => setSelectedImageIndex(selectedImageIndex - 1)
-              : undefined
-          }
+          onNext={selectedImageIndex < selectedGeneration.output.images.length - 1 
+            ? () => setSelectedImageIndex(i => i !== null ? i + 1 : null)
+            : undefined}
+          onPrevious={selectedImageIndex > 0
+            ? () => setSelectedImageIndex(i => i !== null ? i - 1 : null)
+            : undefined}
           hasNext={selectedImageIndex < selectedGeneration.output.images.length - 1}
           hasPrevious={selectedImageIndex > 0}
-          onDownload={() => 
-            downloadImage(
-              selectedGeneration.output.images[selectedImageIndex].url,
-              `generation-${selectedGeneration.id}-${selectedImageIndex + 1}.png`
-            )
-          }
+          onDownload={() => {
+            const image = selectedGeneration.output.images[selectedImageIndex];
+            downloadImage(image.url, `generation-${selectedGeneration.id}-${selectedImageIndex}.png`);
+          }}
+          isNSFW={selectedGeneration.output.has_nsfw_concepts?.[selectedImageIndex] ?? false}
+          onNSFWToggle={handleNSFWToggle}
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Generation Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Model</p>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{selectedGeneration.modelName}</span>
-                    {selectedGeneration.output.has_nsfw_concepts?.[selectedImageIndex] && (
-                      <Badge variant="destructive">NSFW</Badge>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Generated</p>
-                  <p className="font-medium">
-                    {formatDistanceToNow(selectedGeneration.timestamp, { addSuffix: true })}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Seed</p>
-                  <p className="font-medium font-mono">{selectedGeneration.output.seed}</p>
-                </div>
-              </div>
+              <h3 className="font-medium mb-1">Prompt</h3>
+              <p className="text-sm text-muted-foreground">{selectedGeneration.prompt}</p>
             </div>
-
             <Separator />
-
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Prompt</p>
-              <p className="text-sm">{selectedGeneration.prompt}</p>
+              <h3 className="font-medium mb-1">Model</h3>
+              <p className="text-sm text-muted-foreground">{selectedGeneration.modelName}</p>
+            </div>
+            <Separator />
+            <div>
+              <h3 className="font-medium mb-1">Generated</h3>
+              <p className="text-sm text-muted-foreground">
+                {formatDistanceToNow(selectedGeneration.timestamp, { addSuffix: true })}
+              </p>
             </div>
           </div>
         </Lightbox>

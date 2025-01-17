@@ -16,6 +16,8 @@ interface LightboxProps {
   hasPrevious?: boolean;
   onDownload?: () => void;
   children?: React.ReactNode;
+  isNSFW?: boolean;
+  onNSFWToggle?: (isNSFW: boolean) => void;
 }
 
 export function Lightbox({ 
@@ -27,7 +29,9 @@ export function Lightbox({
   hasNext,
   hasPrevious,
   onDownload,
-  children
+  children,
+  isNSFW,
+  onNSFWToggle
 }: LightboxProps) {
   if (!imageUrl) return null;
 
@@ -45,6 +49,16 @@ export function Lightbox({
         />
 
         <div className="absolute right-4 top-4 flex items-center gap-2 z-50">
+          {onNSFWToggle && (
+            <Button
+              variant={isNSFW ? "destructive" : "outline"}
+              size="sm"
+              className="bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+              onClick={() => onNSFWToggle(!isNSFW)}
+            >
+              {isNSFW ? "Mark Safe" : "Mark NSFW"}
+            </Button>
+          )}
           {onDownload && (
             <Button
               variant="outline"
