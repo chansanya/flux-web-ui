@@ -57,28 +57,35 @@ const Page = () => {
       setIsGenerating(true);
       setLogs([]);
       
+      const inputParams = {
+        prompt: inputState.prompt,
+        seed: inputState.seed ? parseInt(inputState.seed) : undefined,
+        safety_tolerance: "6",
+        enable_safety_checker: false,
+        aspect_ratio: inputState.aspect_ratio,
+        raw: inputState.raw,
+        image_url: uploadedImageUrl || Blob || undefined,
+        image_prompt_strength: inputState.image_prompt_strength,
+        num_inference_steps: inputState.num_inference_steps,
+        guidance_scale: inputState.guidance_scale,
+      };
+      
+      console.log('🚀 Request Parameters:', inputParams);
+      
       const result = await fal.subscribe("fal-ai/flux-pro/v1.1-ultra/redux", {
-        input: {
-          prompt: inputState.prompt,
-          seed: inputState.seed ? parseInt(inputState.seed) : undefined,
-          safety_tolerance: inputState.safety_tolerance as "1"|"2"|"3"|"4"|"5"|"6"|undefined,
-          enable_safety_checker: inputState.enable_safety_checker,
-          aspect_ratio: inputState.aspect_ratio as "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" | "9:21" | undefined,
-          raw: inputState.raw,
-          image_url: uploadedImageUrl || Blob || undefined,
-          image_prompt_strength: inputState.image_prompt_strength,
-          num_inference_steps: inputState.num_inference_steps,
-          guidance_scale: inputState.guidance_scale,
-        },
+        input: inputParams,
         logs: true,
         onQueueUpdate: (update) => {
           if (update.status === "IN_PROGRESS") {
             const messages = update.logs.map((log) => log.message);
             setLogs(prev => [...prev, ...messages]);
+            console.log('📝 Queue Update:', update);
             messages.forEach(console.log);
           }
         },
       });
+      
+      console.log('✅ API Response:', result);
       
       if (result.data.images?.[0]) {
         const generatedImg = result.data.images[0];

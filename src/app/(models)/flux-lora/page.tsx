@@ -22,6 +22,8 @@ interface ImageResult {
 interface LoraWeight {
   path: string;
   scale: number;
+  enabled: boolean;
+  name: string;
 }
 
 interface HistoryItem {
@@ -84,10 +86,12 @@ const Page = () => {
   useEffect(() => {
     if (remixedImage) {
       setGeneratedImage({ url: remixedImage.imageUrl } as ImageResult);
+      const seed = remixedImage.responseDetails.seed || remixedImage.requestDetails.options?.seed;
+      
       setInputState(prev => ({
         ...prev,
         prompt: remixedImage.prompt,
-        seed: remixedImage.requestDetails.options?.seed?.toString() || "",
+        seed: seed?.toString() || "",
         num_inference_steps: remixedImage.requestDetails.options?.numInferenceSteps || 28,
         guidance_scale: remixedImage.requestDetails.options?.guidanceScale || 3.5,
         enable_safety_checker: remixedImage.requestDetails.options?.enableSafetyChecker || false,
@@ -112,6 +116,8 @@ const Page = () => {
       setIsGenerating(true);
       setLogs([]);
       
+      const enabledLoras = inputState.loras.filter(lora => lora.enabled);
+      
       const result = await fal.subscribe("fal-ai/flux-lora", {
         input: {
           prompt: inputState.prompt,
@@ -121,7 +127,7 @@ const Page = () => {
           guidance_scale: parseFloat(inputState.guidance_scale.toString()),
           enable_safety_checker: inputState.enable_safety_checker,
           output_format: inputState.output_format,
-          loras: inputState.loras.length > 0 ? inputState.loras : undefined,
+          loras: enabledLoras.length > 0 ? enabledLoras : undefined,
         },
         logs: true,
         onQueueUpdate: (update) => {
@@ -155,7 +161,7 @@ const Page = () => {
               guidanceScale: parseFloat(inputState.guidance_scale.toString()),
               enableSafetyChecker: inputState.enable_safety_checker,
               outputFormat: inputState.output_format,
-              loras: inputState.loras.length > 0 ? inputState.loras : undefined,
+              loras: enabledLoras.length > 0 ? enabledLoras : undefined,
             }
           },
           responseDetails: {
@@ -196,7 +202,7 @@ const Page = () => {
     num_inference_steps: 28,
     seed: "",
     guidance_scale: 3.5,
-    enable_safety_checker: true,
+    enable_safety_checker: false,
     output_format: "jpeg" as "jpeg" | "png",
     loras: [] as LoraWeight[],
   });
@@ -209,16 +215,20 @@ const Page = () => {
     }));
   };
 
-  const handleLoraChange = (index: number, field: 'path' | 'scale', value: string) => {
+  const handleLoraChange = (index: number, field: 'path' | 'scale' | 'enabled' | 'name', value: string | number | boolean) => {
     setInputState(prev => {
       const newLoras = [...prev.loras];
       if (index >= newLoras.length) {
-        newLoras.push({ path: '', scale: 1 });
+        newLoras.push({ path: '', scale: 1, enabled: true, name: '' });
       }
       if (field === 'scale') {
-        newLoras[index] = { ...newLoras[index], scale: parseFloat(value) || 1 };
+        newLoras[index] = { ...newLoras[index], scale: typeof value === 'number' ? value : parseFloat(value as string) || 1 };
+      } else if (field === 'enabled') {
+        newLoras[index] = { ...newLoras[index], enabled: value as boolean };
+      } else if (field === 'name') {
+        newLoras[index] = { ...newLoras[index], name: (value as string) || '' };
       } else {
-        newLoras[index] = { ...newLoras[index], path: value };
+        newLoras[index] = { ...newLoras[index], path: (value as string) || '' };
       }
       return { ...prev, loras: newLoras };
     });
@@ -235,7 +245,7 @@ const Page = () => {
     if (inputState.loras.length < 5) {
       setInputState(prev => ({
         ...prev,
-        loras: [...prev.loras, { path: '', scale: 1 }]
+        loras: [...prev.loras, { path: '', scale: 1, enabled: true, name: '' }]
       }));
     }
   };
@@ -372,29 +382,56 @@ const Page = () => {
             </div>
             
             {inputState.loras.map((lora, index) => (
-              <div key={index} className="space-y-2 p-4 border rounded-lg relative">
-                <button
-                  onClick={() => removeLora(index)}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                >
-                  ×
-                </button>
-                
-                <div className="space-y-2">
-                  <Label htmlFor={`lora-path-${index}`}>LoRA Path/URL</Label>
-                  <Input
-                    id={`lora-path-${index}`}
-                    value={lora.path}
-                    onChange={(e) => handleLoraChange(index, 'path', e.target.value)}
-                    placeholder="Enter LoRA path or URL"
-                    className="w-full"
-                  />
+              <div key={index} className="space-y-1.5 p-3 border rounded-lg relative">
+                <div className="absolute top-1.5 right-1.5 flex space-x-1">
+                  <button
+                    onClick={() => handleLoraChange(index, 'enabled', !lora.enabled)}
+                    className={`px-1.5 py-0.5 rounded-md text-xs ${
+                      lora.enabled 
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {lora.enabled ? 'Enabled' : 'Disabled'}
+                  </button>
+                  <button
+                    onClick={() => removeLora(index)}
+                    className="text-red-500 hover:text-red-700 px-1.5"
+                  >
+                    ×
+                  </button>
                 </div>
                 
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <Label htmlFor={`lora-scale-${index}`}>Scale</Label>
-                    <span className="text-sm text-gray-500">{lora.scale.toFixed(1)}</span>
+                <div className={`grid grid-cols-2 gap-2 ${!lora.enabled && 'opacity-50'}`}>
+                  <div className="space-y-1">
+                    <Label htmlFor={`lora-name-${index}`} className="text-sm">Name</Label>
+                    <Input
+                      id={`lora-name-${index}`}
+                      value={lora.name || ''}
+                      onChange={(e) => handleLoraChange(index, 'name', e.target.value)}
+                      placeholder="Enter name"
+                      className="w-full h-8 text-sm"
+                      disabled={!lora.enabled}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <Label htmlFor={`lora-path-${index}`} className="text-sm">Path/URL</Label>
+                    <Input
+                      id={`lora-path-${index}`}
+                      value={lora.path || ''}
+                      onChange={(e) => handleLoraChange(index, 'path', e.target.value)}
+                      placeholder="Enter path"
+                      className="w-full h-8 text-sm"
+                      disabled={!lora.enabled}
+                    />
+                  </div>
+                </div>
+                
+                <div className={`mt-1 ${!lora.enabled && 'opacity-50'}`}>
+                  <div className="flex justify-between items-center mb-0.5">
+                    <Label htmlFor={`lora-scale-${index}`} className="text-sm">Scale</Label>
+                    <span className="text-xs text-gray-500">{lora.scale.toFixed(1)}</span>
                   </div>
                   <Slider
                     id={`lora-scale-${index}`}
@@ -404,6 +441,7 @@ const Page = () => {
                     max={4}
                     step={0.1}
                     className="w-full"
+                    disabled={!lora.enabled}
                   />
                 </div>
               </div>

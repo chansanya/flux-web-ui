@@ -76,6 +76,11 @@ const Page = () => {
         const generatedImg = result.data.images[0];
         setGeneratedImage(generatedImg);
         
+        setInputState(prev => ({
+          ...prev,
+          seed: ""
+        }));
+        
         const historyItem: HistoryItem = {
           id: uuidv4(),
           imageUrl: generatedImg.url,
