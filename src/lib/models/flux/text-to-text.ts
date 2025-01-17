@@ -16,10 +16,6 @@ export const flux_1_1_pro: Model = {
       options: ["square_hd", "square", "portrait_4_3", "portrait_16_9", "landscape_4_3", "landscape_16_9"]
     },
     {
-      key: "seed",
-      type: "number"
-    },
-    {
       key: "sync_mode",
       type: "boolean",
       default: false
@@ -32,7 +28,7 @@ export const flux_1_1_pro: Model = {
     {
       key: "enable_safety_checker",
       type: "boolean",
-      default: true
+      default: false
     },
     {
       key: "safety_tolerance",
@@ -45,6 +41,10 @@ export const flux_1_1_pro: Model = {
       type: "enum",
       default: "jpeg",
       options: ["jpeg", "png"]
+    },
+    {
+      key: "seed",
+      type: "number"
     }
   ],
   outputSchema: [
@@ -81,8 +81,10 @@ export const flux_1_1_pro_ultra: Model = {
       required: true
     },
     {
-      key: "seed",
-      type: "number"
+      key: "aspect_ratio",
+      type: "enum",
+      default: "16:9",
+      options: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16", "9:21"]
     },
     {
       key: "sync_mode",
@@ -97,7 +99,7 @@ export const flux_1_1_pro_ultra: Model = {
     {
       key: "enable_safety_checker",
       type: "boolean",
-      default: true
+      default: false
     },
     {
       key: "safety_tolerance",
@@ -112,14 +114,12 @@ export const flux_1_1_pro_ultra: Model = {
       options: ["jpeg", "png"]
     },
     {
-      key: "aspect_ratio",
-      type: "enum",
-      default: "16:9",
-      options: ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16", "9:21"]
-    },
-    {
       key: "raw",
       type: "boolean"
+    },
+    {
+      key: "seed",
+      type: "number"
     }
   ],
   outputSchema: [
