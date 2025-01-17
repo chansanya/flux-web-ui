@@ -29,12 +29,12 @@ export function GenerationSettings({
   setParameters 
 }: GenerationSettingsProps) {
   function renderParameter(param: ModelParameter) {
+    if (param.key === 'prompt' || param.key === 'sync_mode' || param.key === 'enable_safety_checker') return null;
+
     const value = parameters[param.key] ?? param.default;
     const onChange = (newValue: any) => {
       setParameters({ ...parameters, [param.key]: newValue });
     };
-
-    if (param.key === 'prompt') return null; // Handled separately
 
     switch (param.type) {
       case 'enum':
