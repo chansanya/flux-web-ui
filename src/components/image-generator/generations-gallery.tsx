@@ -139,27 +139,27 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Previous Generations</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 className="text-xl sm:text-2xl font-bold">Previous Generations</h2>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground">Search:</span>
-              <div className="relative w-[200px]">
+              <div className="relative w-full sm:w-[200px]">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search prompts..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setCurrentPage(1); // Reset to first page on search
+                    setCurrentPage(1);
                   }}
                   className="pl-8"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground">Models:</span>
               <Select
                 value={selectedModels.join(",")}
@@ -168,7 +168,7 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
                   setSelectedModels(models.length ? models : [AVAILABLE_MODELS[0].id]);
                 }}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue>
                     {selectedModels.length === AVAILABLE_MODELS.length
                       ? "All Models"
@@ -189,7 +189,6 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
                         setSelectedModels(prev => {
                           const isSelected = prev.includes(model.id);
                           if (isSelected) {
-                            // Don't allow deselecting if it's the last model
                             if (prev.length === 1) return prev;
                             return prev.filter(id => id !== model.id);
                           }
@@ -204,13 +203,13 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
               </Select>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <span className="text-sm font-medium text-muted-foreground">NSFW:</span>
               <Select
                 value={nsfwFilter}
                 onValueChange={(value) => setNsfwFilter(value as NSFWFilter)}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-full sm:w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -226,32 +225,51 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
+              className="h-8 px-2 sm:px-4"
             >
               Previous
             </Button>
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={page === currentPage ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // On mobile, show fewer page numbers
+                  if (window.innerWidth < 640) {
+                    return page === 1 || 
+                           page === totalPages || 
+                           page === currentPage ||
+                           Math.abs(page - currentPage) <= 1;
+                  }
+                  return true;
+                })
+                .map((page, index, array) => (
+                  <>
+                    {index > 0 && array[index - 1] !== page - 1 && (
+                      <span className="px-1">...</span>
+                    )}
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="h-8 w-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  </>
+                ))}
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
+              className="h-8 px-2 sm:px-4"
             >
               Next
             </Button>
@@ -259,7 +277,7 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {paginatedGenerations
           .filter(generation => 
             nsfwFilter !== "hide" || !generation.output.has_nsfw_concepts?.[0]
@@ -317,7 +335,7 @@ export function GenerationsGallery({ generations }: GenerationsGalleryProps) {
                       </div>
                     </div>
                     <div className="p-3 space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs text-muted-foreground">{generation.modelName}</span>
                         {isNSFW && (
                           <Badge variant="destructive" className="text-[10px]">NSFW</Badge>
