@@ -14,6 +14,10 @@ const routes = [
   {
     href: "/flux/fal-ai-flux-pro-v1.1-ultra",
     label: "Flux Pro Ultra"
+  },
+  {
+    href: "/flux/fal-ai-flux-lora",
+    label: "Flux LoRA"
   }
 ] as const;
 

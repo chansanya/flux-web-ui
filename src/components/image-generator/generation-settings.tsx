@@ -39,10 +39,10 @@ export function GenerationSettings({
     switch (param.type) {
       case 'enum':
         return (
-          <div key={param.key} className="space-y-2">
-            <Label htmlFor={param.key}>{param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
+          <div key={param.key} className="space-y-1">
+            <Label htmlFor={param.key} className="text-sm">{param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
             <Select value={value?.toString()} onValueChange={onChange}>
-              <SelectTrigger>
+              <SelectTrigger className="h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -58,8 +58,8 @@ export function GenerationSettings({
       
       case 'boolean':
         return (
-          <div key={param.key} className="flex items-center justify-between space-x-2">
-            <Label htmlFor={param.key}>{param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
+          <div key={param.key} className="flex items-center justify-between space-x-2 py-1">
+            <Label htmlFor={param.key} className="text-sm">{param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
             <Switch
               id={param.key}
               checked={value}
@@ -89,9 +89,9 @@ export function GenerationSettings({
           }[param.key];
 
           return (
-            <div key={param.key} className="space-y-2">
+            <div key={param.key} className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor={param.key}>
+                <Label htmlFor={param.key} className="text-sm">
                   {param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </Label>
                 <span className="text-sm w-12 text-right">
@@ -105,7 +105,7 @@ export function GenerationSettings({
                 max={config.max}
                 step={config.step}
                 value={value || config.default}
-                className="h-8"
+                className="h-6"
                 onChange={(e) => onChange(Number(e.target.value))}
               />
             </div>
@@ -114,12 +114,13 @@ export function GenerationSettings({
 
         // Default number input for other numeric parameters
         return (
-          <div key={param.key} className="space-y-2">
-            <Label htmlFor={param.key}>{param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
+          <div key={param.key} className="space-y-1">
+            <Label htmlFor={param.key} className="text-sm">{param.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
             <Input
               id={param.key}
               type="number"
               value={value}
+              className="h-8"
               onChange={(e) => onChange(Number(e.target.value))}
             />
           </div>
@@ -131,9 +132,9 @@ export function GenerationSettings({
           const MAX_LORAS = 3;
           
           return (
-            <div key={param.key} className="space-y-4">
+            <div key={param.key} className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>LoRA Weights ({loras.length}/{MAX_LORAS})</Label>
+                <Label className="text-sm">LoRA Weights ({loras.length}/{MAX_LORAS})</Label>
                 <Button
                   variant="outline"
                   size="sm"
@@ -143,15 +144,15 @@ export function GenerationSettings({
                   Add LoRA
                 </Button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {loras.map((lora, index) => (
-                  <div key={index} className="p-3 border rounded-lg space-y-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium">LoRA #{index + 1}</Label>
+                  <div key={index} className="p-2 border rounded-lg space-y-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-sm">LoRA #{index + 1}</Label>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2"
+                        className="h-6 px-2"
                         onClick={() => {
                           const newLoras = [...loras];
                           newLoras.splice(index, 1);
@@ -162,11 +163,11 @@ export function GenerationSettings({
                       </Button>
                     </div>
                     <div className="grid grid-cols-[2fr,1fr] gap-2">
-                      <div className="space-y-1">
+                      <div>
                         <Input
                           placeholder="Enter LoRA URL..."
                           value={lora.path}
-                          className="h-8"
+                          className="h-7"
                           onChange={(e) => {
                             const newLoras = [...loras];
                             newLoras[index] = { ...lora, path: e.target.value };
@@ -174,25 +175,23 @@ export function GenerationSettings({
                           }}
                         />
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="range"
-                            min={0}
-                            max={2}
-                            step={0.1}
-                            value={lora.scale}
-                            className="h-8"
-                            onChange={(e) => {
-                              const newLoras = [...loras];
-                              newLoras[index] = { ...lora, scale: Number(e.target.value) };
-                              onChange(newLoras);
-                            }}
-                          />
-                          <span className="text-sm w-12 text-right">
-                            {lora.scale.toFixed(1)}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="range"
+                          min={0}
+                          max={2}
+                          step={0.1}
+                          value={lora.scale}
+                          className="h-7"
+                          onChange={(e) => {
+                            const newLoras = [...loras];
+                            newLoras[index] = { ...lora, scale: Number(e.target.value) };
+                            onChange(newLoras);
+                          }}
+                        />
+                        <span className="text-sm w-8 text-right">
+                          {lora.scale.toFixed(1)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -208,24 +207,78 @@ export function GenerationSettings({
     }
   }
 
+  // Group parameters by type for more efficient layout
+  const groupParameters = () => {
+    const enumParams: JSX.Element[] = [];
+    const booleanParams: JSX.Element[] = [];
+    const numberParams: JSX.Element[] = [];
+    const otherParams: JSX.Element[] = [];
+
+    model.inputSchema.forEach(param => {
+      const rendered = renderParameter(param);
+      if (!rendered) return;
+
+      switch (param.type) {
+        case 'enum':
+          enumParams.push(rendered);
+          break;
+        case 'boolean':
+          booleanParams.push(rendered);
+          break;
+        case 'number':
+          numberParams.push(rendered);
+          break;
+        default:
+          otherParams.push(rendered);
+      }
+    });
+
+    return { enumParams, booleanParams, numberParams, otherParams };
+  };
+
+  const { enumParams, booleanParams, numberParams, otherParams } = groupParameters();
+
   return (
     <Card className="h-full">
-      <CardHeader>
+      <CardHeader className="pb-4">
         <CardTitle>Settings</CardTitle>
         <CardDescription>Configure your image generation for {model.name}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="prompt">Prompt</Label>
+        <div className="space-y-1">
+          <Label htmlFor="prompt" className="text-sm">Prompt</Label>
           <Textarea
             id="prompt"
             placeholder="Enter your image generation prompt..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[100px]"
+            className="min-h-[80px]"
           />
         </div>
-        {model.inputSchema.map(renderParameter)}
+        
+        {/* Grid layout for enum parameters */}
+        {enumParams.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {enumParams}
+          </div>
+        )}
+
+        {/* Grid layout for boolean parameters */}
+        {booleanParams.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {booleanParams}
+          </div>
+        )}
+
+        {/* Grid layout for number parameters */}
+        {numberParams.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {numberParams}
+          </div>
+        )}
+
+        {/* Other parameters (like LoRA) */}
+        {otherParams}
       </CardContent>
       <CardFooter>
         <Button 
