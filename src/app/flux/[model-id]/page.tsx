@@ -1,5 +1,5 @@
 import { ImageGenerator } from "@/components/image-generator";
-import { flux_1_1_pro, flux_1_1_pro_ultra } from "@/lib/models/flux/text-to-text";
+import { allModels } from "@/lib/models/registry";
 import { notFound } from "next/navigation";
 
 interface Props {
@@ -11,11 +11,10 @@ interface Props {
 export default async function FluxModelPage({ params }: Props) {
   const { "model-id": modelId } = await params;
   
-  // Map URL-friendly IDs to actual models
-  const model = {
-    "fal-ai-flux-pro-v1.1": flux_1_1_pro,
-    "fal-ai-flux-pro-v1.1-ultra": flux_1_1_pro_ultra,
-  }[modelId];
+  // Find the model from our registry
+  const model = allModels.find(
+    (m) => m.id.replace(/\//g, "-") === modelId
+  );
 
   if (!model) {
     notFound();

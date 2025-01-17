@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { flux_1_1_pro, flux_1_1_pro_ultra } from "@/lib/models/flux/text-to-text";
+import { allModels } from "@/lib/models/registry";
 
 export default function Home() {
-  const models = [flux_1_1_pro, flux_1_1_pro_ultra];
-
   return (
     <main className="container mx-auto py-8 px-4">
       <div className="flex flex-col items-center space-y-8">
@@ -13,7 +11,7 @@ export default function Home() {
           Generate amazing images using FAL.AI&apos;s powerful AI models
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
-          {models.map((model) => (
+          {allModels.map((model) => (
             <Link 
               key={model.id} 
               href={`/flux/${model.id.replace(/\//g, "-")}`}
