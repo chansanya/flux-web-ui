@@ -1,4 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { Image } from "@/lib/types";
 
 interface ImageDisplayProps {
@@ -8,9 +10,21 @@ interface ImageDisplayProps {
 export function ImageDisplay({ result }: ImageDisplayProps) {
   return (
     <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Generated Image</CardTitle>
-        <CardDescription>Your AI-generated artwork will appear here</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Generated Image</CardTitle>
+          <CardDescription>Your AI-generated artwork will appear here</CardDescription>
+        </div>
+        {result && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => window.open(result.url, '_blank')}
+            title="Download Image"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {result ? (

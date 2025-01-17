@@ -14,6 +14,7 @@ interface LightboxProps {
   onPrevious?: () => void;
   hasNext?: boolean;
   hasPrevious?: boolean;
+  children?: React.ReactNode;
 }
 
 export function Lightbox({ 
@@ -23,7 +24,8 @@ export function Lightbox({
   onNext,
   onPrevious,
   hasNext,
-  hasPrevious
+  hasPrevious,
+  children
 }: LightboxProps) {
   if (!imageUrl) return null;
 
@@ -48,50 +50,63 @@ export function Lightbox({
           <span className="sr-only">Close</span>
         </button>
 
-        {hasPrevious && onPrevious && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90 backdrop-blur-sm z-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPrevious();
-            }}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Previous image</span>
-          </Button>
-        )}
+        <div className="relative w-full h-full flex md:flex-row flex-col z-10">
+          {/* Details Panel */}
+          {children && (
+            <div className="md:w-80 w-full shrink-0 p-6 bg-background/95 backdrop-blur-sm md:h-full overflow-y-auto">
+              {children}
+            </div>
+          )}
 
-        {hasNext && onNext && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90 backdrop-blur-sm z-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNext();
-            }}
-          >
-            <ChevronRight className="h-4 w-4" />
-            <span className="sr-only">Next image</span>
-          </Button>
-        )}
+          {/* Image Container */}
+          <div className="flex-1 relative flex items-center justify-center min-h-0 p-4">
+            <div className="relative w-full h-full">
+              <Image
+                src={imageUrl}
+                alt="Enlarged view"
+                fill
+                className="object-contain"
+                quality={100}
+                priority
+                sizes="(min-width: 768px) 60vw, 90vw"
+                onError={(e) => {
+                  console.error('Failed to load image:', imageUrl);
+                  onClose();
+                }}
+              />
 
-        <div className="relative w-full h-full flex items-center justify-center z-10">
-          <Image
-            src={imageUrl}
-            alt="Enlarged view"
-            fill
-            className="object-contain"
-            quality={100}
-            priority
-            sizes="90vw"
-            onError={(e) => {
-              console.error('Failed to load image:', imageUrl);
-              onClose();
-            }}
-          />
+              {/* Navigation Buttons */}
+              {hasPrevious && onPrevious && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90 backdrop-blur-sm z-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPrevious();
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="sr-only">Previous image</span>
+                </Button>
+              )}
+
+              {hasNext && onNext && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90 backdrop-blur-sm z-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNext();
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="sr-only">Next image</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
