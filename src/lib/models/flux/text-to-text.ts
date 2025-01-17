@@ -119,7 +119,7 @@ export const flux_1_1_pro_ultra: Model = {
     {
       key: "safety_tolerance",
       type: "enum",
-      default: "2",
+      default: "6",
       options: ["1", "2", "3", "4", "5", "6"]
     },
     {
