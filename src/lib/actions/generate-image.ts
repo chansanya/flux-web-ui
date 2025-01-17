@@ -1,7 +1,7 @@
 'use server';
 
 import { fal } from "@fal-ai/client";
-import { Model } from "@/lib/types";
+import { Model, Image } from "@/lib/types";
 
 export async function generateImage(
   model: Model, 
@@ -43,26 +43,22 @@ export async function generateImage(
       hasImages: !!result.data?.images?.length
     });
 
-    // Extract the first image URL from the result
-    const imageUrl = result.data?.images?.[0];
-    if (!imageUrl) {
-      console.error('❌ No image URL in response');
+    // Extract the first image from the result
+    const image = result.data?.images?.[0];
+    if (!image) {
+      console.error('❌ No image in response');
       throw new Error("No image was generated");
     }
 
     console.log('🎉 Successfully generated image:', {
       seed: result.data?.seed,
       requestId: result.requestId,
-      imageUrl: result.data?.images?.[0],
-      // Log any additional response data that might be useful
-      timing: result.data?.timing,
-      modelVersion: result.data?.model_version,
-      allImages: result.data?.images
+      image
     });
 
     return {
       success: true as const,
-      imageUrl,
+      image,
       seed: result.data?.seed,
       requestId: result.requestId,
     };

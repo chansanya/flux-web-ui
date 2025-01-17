@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Image } from "@/lib/types";
 
 interface ImageDisplayProps {
-  result: string | null;
+  result: Image | null;
 }
 
 export function ImageDisplay({ result }: ImageDisplayProps) {
@@ -14,8 +15,10 @@ export function ImageDisplay({ result }: ImageDisplayProps) {
       <CardContent>
         {result ? (
           <img 
-            src={result} 
+            src={result.url} 
             alt="Generated image"
+            width={result.width}
+            height={result.height}
             className="rounded-lg w-full object-cover"
           />
         ) : (

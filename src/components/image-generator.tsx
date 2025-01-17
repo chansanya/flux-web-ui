@@ -6,6 +6,7 @@ import { GenerationSettings } from "./image-generator/generation-settings";
 import { ImageDisplay } from "./image-generator/image-display";
 import { generateImage } from "@/lib/actions/generate-image";
 import { useToast } from "@/hooks/use-toast";
+import { Image } from "@/lib/types";
 
 const API_KEY_STORAGE_KEY = 'fal-ai-api-key';
 
@@ -16,8 +17,9 @@ interface ImageGeneratorProps {
 export function ImageGenerator({ model }: ImageGeneratorProps) {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<Image | null>(null);
   const { toast } = useToast();
+
   const [parameters, setParameters] = useState<Record<string, any>>(() => {
     // Initialize parameters with default values from the model schema
     return Object.fromEntries(
@@ -62,7 +64,7 @@ export function ImageGenerator({ model }: ImageGeneratorProps) {
           seed: response.seed,
           requestId: response.requestId
         });
-        setResult(response.imageUrl);
+        setResult(response.image);
         toast({
           title: "Image generated successfully",
           description: `Seed: ${response.seed}`,
