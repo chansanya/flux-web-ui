@@ -5,6 +5,21 @@ export interface Model {
   outputSchema: ModelParameter[];
 }
 
+export interface Generation {
+  id: string;
+  modelId: string;
+  modelName: string;
+  prompt: string;
+  parameters: Record<string, any>;
+  output: {
+    images: Image[];
+    timings: Record<string, any>;
+    seed: number;
+    has_nsfw_concepts: boolean[];
+  };
+  timestamp: number;
+}
+
 export interface ModelParameter {
   key: string;
   type: ModelParameterType;

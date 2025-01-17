@@ -3,11 +3,27 @@
 import { fal } from "@fal-ai/client";
 import { Model, Image } from "@/lib/types";
 
+interface SuccessResponse {
+  success: true;
+  image: Image;
+  seed: number;
+  requestId: string;
+  timings: Record<string, any>;
+  has_nsfw_concepts: boolean[];
+}
+
+interface ErrorResponse {
+  success: false;
+  error: string;
+}
+
+type GenerateImageResponse = SuccessResponse | ErrorResponse;
+
 export async function generateImage(
   model: Model, 
   input: Record<string, any>,
   apiKey: string
-) {
+): Promise<GenerateImageResponse> {
   console.log('🚀 Starting image generation process:', {
     modelId: model.id,
     inputParams: { ...input, prompt: input.prompt?.substring(0, 50) + '...' } // Truncate prompt for logging
@@ -57,15 +73,17 @@ export async function generateImage(
     });
 
     return {
-      success: true as const,
+      success: true,
       image,
       seed: result.data?.seed,
       requestId: result.requestId,
+      timings: result.data?.timings || {},
+      has_nsfw_concepts: result.data?.has_nsfw_concepts || [],
     };
   } catch (error) {
     console.error("❌ Image generation failed:", error);
     return {
-      success: false as const,
+      success: false,
       error: error instanceof Error ? error.message : "Failed to generate image",
     };
   }
