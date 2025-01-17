@@ -2,62 +2,104 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Model } from "@/lib/types";
 import { useState } from "react";
 
-export function ImageGenerator() {
-  const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+interface GenerationSettingsProps {
+  prompt: string;
+  setPrompt: (prompt: string) => void;
+  onGenerate: () => void;
+  isGenerating: boolean;
+  model: Model;
+}
 
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    setIsGenerating(true);
-    // TODO: Implement image generation logic
-    setIsGenerating(false);
-  }
-
+function GenerationSettings({ prompt, setPrompt, onGenerate, isGenerating, model }: GenerationSettingsProps) {
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Image Generator</CardTitle>
-        <CardDescription>Generate images using FAL.AI's powerful image generation models</CardDescription>
+        <CardTitle>Settings</CardTitle>
+        <CardDescription>Configure your image generation for {model.name}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleGenerate} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="prompt">Prompt</Label>
-            <Textarea
-              id="prompt"
-              placeholder="Enter your image generation prompt..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          {result && (
-            <div className="mt-4">
-              <img 
-                src={result} 
-                alt="Generated image"
-                className="rounded-lg w-full object-cover"
-              />
-            </div>
-          )}
-        </form>
+        <div className="space-y-2">
+          <Label htmlFor="prompt">Prompt</Label>
+          <Textarea
+            id="prompt"
+            placeholder="Enter your image generation prompt..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="min-h-[100px]"
+          />
+        </div>
       </CardContent>
       <CardFooter>
         <Button 
-          type="submit" 
+          onClick={onGenerate}
           disabled={isGenerating || !prompt}
-          onClick={handleGenerate}
           className="w-full"
         >
           {isGenerating ? "Generating..." : "Generate Image"}
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+interface ImageDisplayProps {
+  result: string | null;
+}
+
+function ImageDisplay({ result }: ImageDisplayProps) {
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle>Generated Image</CardTitle>
+        <CardDescription>Your AI-generated artwork will appear here</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {result ? (
+          <img 
+            src={result} 
+            alt="Generated image"
+            className="rounded-lg w-full object-cover"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
+            <p className="text-muted-foreground">No image generated yet</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ImageGeneratorProps {
+  model: Model;
+}
+
+export function ImageGenerator({ model }: ImageGeneratorProps) {
+  const [prompt, setPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function handleGenerate() {
+    setIsGenerating(true);
+    // TODO: Implement image generation logic using model.id and parameters
+    setIsGenerating(false);
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-6xl mx-auto">
+      <GenerationSettings 
+        prompt={prompt}
+        setPrompt={setPrompt}
+        onGenerate={handleGenerate}
+        isGenerating={isGenerating}
+        model={model}
+      />
+      <ImageDisplay result={result} />
+    </div>
   );
 } 
