@@ -5,8 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Check, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { fal } from "@fal-ai/client";
 
 const API_KEY_STORAGE_KEY = 'fal-ai-api-key';
+
+function configureFalClient(apiKey: string) {
+  fal.config({
+    credentials: apiKey,
+  });
+}
 
 export function ApiKeyInput() {
   const [isVisible, setIsVisible] = useState(false);
@@ -20,6 +27,7 @@ export function ApiKeyInput() {
     if (storedKey) {
       setApiKey(storedKey);
       setHasStoredKey(true);
+      configureFalClient(storedKey);
     }
   }, []);
 
@@ -33,7 +41,9 @@ export function ApiKeyInput() {
       return;
     }
     
-    localStorage.setItem(API_KEY_STORAGE_KEY, apiKey.trim());
+    const trimmedKey = apiKey.trim();
+    localStorage.setItem(API_KEY_STORAGE_KEY, trimmedKey);
+    configureFalClient(trimmedKey);
     setHasStoredKey(true);
     setIsInputVisible(false);
     toast({

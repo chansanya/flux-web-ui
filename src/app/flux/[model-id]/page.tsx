@@ -8,8 +8,8 @@ interface Props {
   }
 }
 
-export default function FluxModelPage({ params }: Props) {
-  const modelId = params["model-id"];
+export default async function FluxModelPage({ params }: Props) {
+  const { "model-id": modelId } = await params;
   
   // Map URL-friendly IDs to actual models
   const model = {
