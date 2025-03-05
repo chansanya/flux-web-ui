@@ -1,7 +1,7 @@
 # FAL.AI Web Interface
 
 A modern web interface for interacting with FAL.AI services, built with Next.js 14 and TypeScript. This application provides a seamless way to manage FAL.AI API keys and interact with various AI services.
-
+reddit: https://www.reddit.com/r/StableDiffusion/comments/1hvklr4/i_made_a_simple_web_ui_to_use_flux_through_the/
 ## Features
 
 - 🔑 Secure API key management
