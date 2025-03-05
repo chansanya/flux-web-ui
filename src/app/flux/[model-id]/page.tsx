@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default async function FluxModelPage({ params }: Props) {
-  const { "model-id": modelId } = await params;
+  const { "model-id": modelId } = params;
   
   // Find the model from our registry
   const model = allModels.find(
