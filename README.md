@@ -37,8 +37,7 @@ yarn install
 
 3. Create a `.env.local` file in the root directory and add your FAL.AI credentials:
 ```env
-NEXT_PUBLIC_FAL_KEY=your_public_key
-FAL_SECRET_KEY=your_secret_key
+NEXT_PUBLIC_API_KEY=your_fal_api_key
 ```
 
 4. Run the development server:
@@ -101,7 +100,8 @@ To deploy on Vercel:
 1. Push your code to GitHub
 2. Import your repository on Vercel
 3. Add your environment variables
-4. Deploy!
+4. set env in vercel: NEXT_PUBLIC_API_KEY=your_fal_api_key or leave it empty
+5. Deploy!
 
 ## Support
 
