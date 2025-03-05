@@ -2,19 +2,15 @@ import { ImageGenerator } from "@/components/image-generator";
 import { allModels } from "@/lib/models/registry";
 import { notFound } from "next/navigation";
 
-interface Props {
-  params: {
-    "model-id": string;
-  }
-}
+type Props = {
+  params: Promise<{ "model-id": string }>;
+};
 
 export default async function FluxModelPage({ params }: Props) {
-  const { "model-id": modelId } = params;
-  
+  const { "model-id": modelId } = await params;
+
   // Find the model from our registry
-  const model = allModels.find(
-    (m) => m.id.replace(/\//g, "-") === modelId
-  );
+  const model = allModels.find((m) => m.id.replace(/\//g, "-") === modelId);
 
   if (!model) {
     notFound();
