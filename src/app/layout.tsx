@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Metadata } from "next";
 import { Navbar } from "@/components/navbar";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "FAL.AI Web Interface",
@@ -16,9 +17,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-1">
-          {children}
-        </div>
+        <div className="flex-1">{children}</div>
+        <Toaster />
       </body>
     </html>
   );
