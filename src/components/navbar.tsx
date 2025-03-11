@@ -9,16 +9,20 @@ import { ApiKeyInput } from "./api-key-input";
 const routes = [
   {
     href: "/flux/fal-ai-flux-pro-v1.1",
-    label: "Flux Pro"
+    label: "Flux Pro",
   },
   {
     href: "/flux/fal-ai-flux-pro-v1.1-ultra",
-    label: "Flux Pro Ultra"
+    label: "Flux Pro Ultra",
   },
   {
     href: "/flux/fal-ai-flux-lora",
-    label: "Flux LoRA"
-  }
+    label: "Flux LoRA",
+  },
+  {
+    href: "https://github.com/14790897/simple-flux-web-api-ui",
+    label: "Give me a star in GitHub",
+  },
 ] as const;
 
 export function Navbar() {
