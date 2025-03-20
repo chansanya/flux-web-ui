@@ -35,7 +35,7 @@ pnpm install
 yarn install
 ```
 
-3. Create a `.env.local` file in the root directory and add your FAL.AI credentials:
+3. Create a `.env.local` file in the root directory and add your FAL.AI credentials(https://fal.ai/dashboard/keys):
 ```env
 NEXT_PUBLIC_API_KEY=your_fal_api_key
 ```
