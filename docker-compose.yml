@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app
+      - ./.env.local:/.env.local
     environment:
       - NODE_ENV=development
     command: npm run dev
